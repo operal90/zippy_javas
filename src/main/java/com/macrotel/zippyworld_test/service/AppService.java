@@ -27,6 +27,10 @@ public class AppService {
     CustomerWalletRepo customerWalletRepo;
     @Autowired
     CustomerCommissionWalletRepo customerCommissionWalletRepo;
+    @Autowired
+    QRDetailRepo qrDetailRepo;
+    @Autowired
+    MessageServiceRepo messageServiceRepo;
 
 
     public BaseResponse testing(){
@@ -62,10 +66,10 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-            //Convert User FirstName and Lastname to generate Account Name
+            //Convert User FirstName and Lastname to generate Account Name, get Transaction Id, Reference Id
             String accountName = userCreationData.getFirstname() +' '+ userCreationData.getLastname();
             String transactionId = userCreationData.getPhonenumber()+'-'+userCreationData.getTransaction_id();
-
+            String referenceId = utilities.randomAlphanumeric(15);
             //Insert into User Account Table
             UserAccountEntity userAccountEntity = new UserAccountEntity();
             userAccountEntity.setFirstname(userCreationData.getFirstname());
@@ -95,7 +99,7 @@ public class AppService {
 
             //Insert into Customer Wallet
             CustomerWalletEntity customerWalletEntity = new CustomerWalletEntity();
-            customerWalletEntity.setReferenceId("");
+            customerWalletEntity.setReferenceId(referenceId);
             customerWalletEntity.setOperationEvent("MAIN");
             customerWalletEntity.setOperationType("CR");
             customerWalletEntity.setServiceAccountNo("1000000020");
@@ -112,7 +116,7 @@ public class AppService {
 
             //Insert into Customer QR Wallet
             QRCustomerWalletEntity qrCustomerWalletEntity = new QRCustomerWalletEntity();
-            qrCustomerWalletEntity.setReferenceId("");
+            qrCustomerWalletEntity.setReferenceId(referenceId);
             qrCustomerWalletEntity.setOperationEvent("MAIN");
             qrCustomerWalletEntity.setOperationType("CR");
             qrCustomerWalletEntity.setServiceAccountNo("1000000020");
@@ -127,7 +131,33 @@ public class AppService {
             qrCustomerWalletEntity.setStatus("Successful");
             qrCustomerWalletRepo.save(qrCustomerWalletEntity);
 
-            //Insert Into Customer Wallet Commission Repo
+            //Insert Into Customer Wallet Commission
+            CustomerCommissionWalletEntity customerCommissionWalletEntity = new CustomerCommissionWalletEntity();
+            customerCommissionWalletEntity.setReferenceId(referenceId);
+            customerCommissionWalletEntity.setOperationType("CR");
+            customerCommissionWalletEntity.setOperationSummary("Credit new customer account");
+            customerCommissionWalletEntity.setWalletBalance((double) 0);
+            customerCommissionWalletEntity.setCustomerId(userCreationData.getPhonenumber());
+            customerCommissionWalletRepo.save(customerCommissionWalletEntity);
+
+            //Insert Into QR Table
+            QRDetailsEntity qrDetailsEntity = new QRDetailsEntity();
+            qrDetailsEntity.setCustomerId(userCreationData.getPhonenumber());
+            qrDetailsEntity.setStatus("1");
+            qrDetailsEntity.setTokenReceiver(userCreationData.getPhonenumber());
+            qrDetailRepo.save(qrDetailsEntity);
+
+            //Insert into Message Service
+            MessageServiceEntity messageServiceEntity = new MessageServiceEntity();
+            messageServiceEntity.setCustomerId(userCreationData.getPhonenumber());
+            messageServiceEntity.setEmail("0");
+            messageServiceEntity.setSms("1");
+            messageServiceEntity.setWhatsapp("1");
+            messageServiceRepo.save(messageServiceEntity);
+
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage("Account Created Successful");
+            baseResponse.setResult(EMPTY_RESULT);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
