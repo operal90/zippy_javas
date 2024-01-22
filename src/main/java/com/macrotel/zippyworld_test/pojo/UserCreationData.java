@@ -21,13 +21,13 @@ public class UserCreationData {
     @NotEmpty(message = "Provide Phone number")
     @Pattern(regexp = PHONE_NUMBER_VALIDATION_REGEX, message = "Phone Number can only be in digit")
     private String phonenumber;
-    private String gender;
     @NotEmpty(message = "Provide email address")
     @Email(message = "Enter a valid email address")
     private String email;
-    @NotEmpty(message = "Provide BVN")
-    private String bvn;
-    private String bvn_phonenumber;
+    @NotEmpty(message = "Provide an Identity Id")
+    private String identityId;
+    @NotEmpty(message = "Provide an Identity Number")
+    private String identityNumber;
     @NotEmpty(message = "Provide PIN")
     @Pattern(regexp = PIN_VALIDATION_REGEX, message = "PIN can only be 4 digit")
     private String pin;
@@ -41,5 +41,6 @@ public class UserCreationData {
     private String referral_phonenumber;
     private String aggregator_code;
     private String agreed;
+    private String gender;
 
 }

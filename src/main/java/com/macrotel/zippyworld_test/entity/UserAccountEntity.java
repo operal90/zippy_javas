@@ -22,8 +22,8 @@ public class UserAccountEntity implements Serializable {
     private String promoCode;
     private String referrerCode;
     private String referralPhonenumber;
-    private String bvn;
-    private String bvnPhonenumber;
+    private String identityId;
+    private String identityNumber;
     private String status;
     private String wtlStatus;
     private String kycLevel;

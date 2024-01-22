@@ -1,7 +1,9 @@
 package com.macrotel.zippyworld_test.controller;
 
 import com.macrotel.zippyworld_test.pojo.BaseResponse;
+import com.macrotel.zippyworld_test.pojo.IdentityData;
 import com.macrotel.zippyworld_test.pojo.UserCreationData;
+import com.macrotel.zippyworld_test.pojo.VerifyUserIdentityData;
 import com.macrotel.zippyworld_test.service.AppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,32 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
+
+    @PostMapping("/create_identity_type")
+    public  ResponseEntity createIdentityType(@Valid @RequestBody IdentityData identityData){
+        BaseResponse baseResponse = appService.createIdentityType(identityData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @GetMapping("/list_identity_type")
+    public  ResponseEntity listIdentityType(){
+        BaseResponse baseResponse = appService.listIdentityType();
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @GetMapping("/list_security_question")
+    public  ResponseEntity listSecurityQuestion(){
+        BaseResponse baseResponse = appService.listSecurityQuestion();
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @PostMapping("/verify_user_identity")
+    public  ResponseEntity verifyUserIdentity(@Valid @RequestBody VerifyUserIdentityData verifyUserIdentityData){
+        BaseResponse baseResponse = appService.verifyUserIdentity(verifyUserIdentityData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse handleValidationExceptions(

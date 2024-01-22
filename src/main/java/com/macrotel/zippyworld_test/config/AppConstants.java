@@ -18,4 +18,6 @@ public class AppConstants {
     public static final String CHARACTER_VALIDATION_REGEX = "^[a-zA-Z ]{3,}(?: [a-zA-Z ]+){0,2}$";
     public static final String PIN_VALIDATION_REGEX = "^\\d{4}$";
 
+    public  static final String BVN_NIN_VALIDATION_REGEX="^\\d{11}$";
+
 }
