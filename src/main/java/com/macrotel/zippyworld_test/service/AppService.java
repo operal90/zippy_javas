@@ -13,6 +13,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.logging.Logger;
 import com.macrotel.Utilities;
@@ -117,10 +120,10 @@ public class AppService {
             userAccountEntity.setParentAggregatorCode(userCreationData.getAggregator_code());
             userAccountEntity.setGender(userCreationData.getGender());
             userAccountEntity.setEmail(userCreationData.getEmail());
-            userAccountEntity.setPin(utilities.encryptPassword(userCreationData.getPin()));
-            userAccountEntity.setTxnPin("001122");
+            userAccountEntity.setPin(utilities.shaEncryption(userCreationData.getPin()));
+            userAccountEntity.setTxnPin(utilities.shaEncryption("001122"));
             userAccountEntity.setSecureId(userCreationData.getSecure_id());
-            userAccountEntity.setAnswer(userCreationData.getAnswer());
+            userAccountEntity.setAnswer(utilities.shaEncryption(userCreationData.getAnswer()));
             userAccountEntity.setUserType("1");
             userAccountEntity.setUserPackageId("1");
             userAccountEntity.setAgreed(userCreationData.getAgreed());
@@ -338,5 +341,7 @@ public class AppService {
         }
         return baseResponse;
     }
+
+
 
 }

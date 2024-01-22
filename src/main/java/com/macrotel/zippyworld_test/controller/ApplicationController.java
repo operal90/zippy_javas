@@ -63,6 +63,7 @@ public class ApplicationController {
         return new ResponseEntity<>(baseResponse,status);
     }
 
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse handleValidationExceptions(
