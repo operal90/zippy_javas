@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Logger;
 import com.macrotel.Utilities;
@@ -47,6 +50,8 @@ public class AppService {
     IdentityRepo identityRepo;
     @Autowired
     SecurityQuestionRepo securityQuestionRepo;
+    @Autowired
+    OTPRepo otpRepo;
 
 
     public BaseResponse testing(){
@@ -101,13 +106,35 @@ public class AppService {
             //Convert User FirstName and Lastname to generate Account Name, get Transaction Id, Reference Id
             String accountName = userCreationData.getFirstname() +' '+ userCreationData.getLastname();
             String referenceId = utilities.refernceId();
+
+            //Generate Account Number
+            String identityUrl = "https://vps.providusbank.com/vps/api/PiPCreateReservedAccountNumber";
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Client-Id", "bUBjUjBUM0xfUHIpKCkuTTEyMw==");
+            headers.put("X-Auth-Signature", " 9d5f1854bc0ebb9efa378354a5468ee156ae03c5265687c95cf9173d8eb62c1beb4ca616c40c35a55dd38a9a93415c3c98999f9d67020a1bc278bd3db23f26fc");
+            headers.put("Content-Type", " application/json");
+            HashMap<String, String> formParams = new HashMap<>();
+            formParams.put("account_name", accountName);
+            formParams.put("bvn", userCreationData.getIdentityNumber());
+            Object generateAccountNumber = thirdPartyAPI.callAPI(identityUrl, HttpMethod.POST,headers,formParams);
+
+            String accountNumber = userCreationData.getPhonenumber();
+            String userAccountName = accountName;
+            Map<String, Object> apiResponse = (Map<String, Object>) generateAccountNumber;
+            if(generateAccountNumber != null){
+                String responseCode = (String) apiResponse.get("responseCode");
+                if(Objects.equals(responseCode, "00")) {
+                    accountNumber = (String) apiResponse.get("account_number");
+                    userAccountName = (String) apiResponse.get("account_name");
+                }
+            }
             //Insert into User Account Table
             UserAccountEntity userAccountEntity = new UserAccountEntity();
             userAccountEntity.setFirstname(userCreationData.getFirstname());
             userAccountEntity.setLastname(userCreationData.getLastname());
             userAccountEntity.setPhonenumber(userCreationData.getPhonenumber());
-            userAccountEntity.setAccountNo("");
-            userAccountEntity.setAccountName(accountName);
+            userAccountEntity.setAccountNo(accountNumber);
+            userAccountEntity.setAccountName(userAccountName);
             userAccountEntity.setGender(userCreationData.getGender());
             userAccountEntity.setPromoCode(userCreationData.getPromo_code());
             userAccountEntity.setReferrerCode(userCreationData.getReferrer_code());
@@ -337,6 +364,75 @@ public class AppService {
             }
         }
         catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse generateRegistrationOTPCode(String phoneNumber){
+        try{
+            if(phoneNumber.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Phone Number cannot be empty");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            if(phoneNumber.length()<11){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Phone Number cannot be less than 11");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            String userOtp = utilities.otpCode(7);
+            OTPEntity otpEntity = new OTPEntity();
+            otpEntity.setToken1(userOtp);
+            otpEntity.setToken(utilities.shaEncryption(userOtp));
+            otpEntity.setCustomerId(phoneNumber);
+            otpEntity.setOperationType("REGISTRATION");
+            otpRepo.save(otpEntity);
+
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(EMPTY_RESULT);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse verifyOtpCode(String otpCode){
+        try{
+            Optional<OTPEntity> isOTPExist = otpRepo.isTokenExist(otpCode);
+            if(isOTPExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Invalid OTP Code");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            OTPEntity otpData = isOTPExist.get();
+            String previousOtpTime =  otpData.getInsertedDt();
+            LocalDateTime previousTime = LocalDateTime.parse(previousOtpTime, DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+            LocalDateTime currentTime = LocalDateTime.now();
+            long minutesDifference = ChronoUnit.MINUTES.between(previousTime, currentTime);
+            if (minutesDifference > 5) {
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("OTP Code has expired, Kindly generate another one");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            } else {
+                HashMap<String, String> otpValue = new HashMap<>();
+                otpValue.put("email_address", otpData.getEmail());
+                otpValue.put("customer_id", otpData.getCustomerId());
+                otpValue.put("operation_type", otpData.getOperationType());
+
+                baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+                baseResponse.setMessage("OTP Verify Successful");
+                baseResponse.setResult(otpValue);
+            }
+
+        }
+        catch(Exception ex){
             LOG.warning(ex.getMessage());
         }
         return baseResponse;

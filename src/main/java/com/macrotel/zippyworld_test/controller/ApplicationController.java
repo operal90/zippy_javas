@@ -63,6 +63,19 @@ public class ApplicationController {
         return new ResponseEntity<>(baseResponse,status);
     }
 
+    @GetMapping("/generate_registration_otp")
+    public ResponseEntity generateRegistrationOtp(@RequestParam("phoneNumber") String phoneNumber){
+        BaseResponse baseResponse = appService.generateRegistrationOTPCode(phoneNumber);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @GetMapping("/verify_otp")
+    public ResponseEntity verifyOtp(@RequestParam("otp_code") String otpCode){
+        BaseResponse baseResponse = appService.verifyOtpCode(otpCode);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
