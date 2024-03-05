@@ -471,6 +471,7 @@ public class AppService {
             customerIdentityRecordEntity.setKycId(upgradeKYCData.getIdentityId());
             customerIdentityRecordEntity.setIdentityName(upgradeKYCData.getIdentityName());
             customerIdentityRecordEntity.setIdentityNumber(upgradeKYCData.getIdentityNumber());
+            customerIdentityRecordEntity.setStatus("1");
             customerIdentityRecordRepo.save(customerIdentityRecordEntity);
 
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
@@ -512,6 +513,7 @@ public class AppService {
                 kycDTO.setIdentityType(identityEntity.getIdentityType());
                 kycDTO.setIdentityNumber(customerKyCData.getIdentityNumber());
                 kycDTO.setDateCreated(customerKyCData.getInsertedDt());
+                kycDTO.setStatus((customerKyCData.getStatus().equals("0") ?"Approved" :"Pending Approval"));
                 result.add(kycDTO);
             }
 
@@ -525,29 +527,49 @@ public class AppService {
         return baseResponse;
     }
 
-    public BaseResponse upgradeCustomerKyc(String customerId){
+    public BaseResponse upgradeCustomerKyc(UpgradeKYCData upgradeKYCData){
         try{
-            //Is customer Exist
-            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
-            if(isCustomerExist.isEmpty()){
+            //Get the customer kyc from database
+            Optional<CustomerIdentityRecordEntity> isIdentityExist = customerIdentityRecordRepo.findByIdentityNumber(upgradeKYCData.getIdentityNumber());
+            if(isIdentityExist.isEmpty()){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("Invalid Customer Id, Kindly Create Account");
+                baseResponse.setMessage("Identity Number does not exist");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-            //Get customer data from database
-            List<CustomerIdentityRecordEntity> getCustomerKYCRecord = customerIdentityRecordRepo.findByCustomerId(customerId);
-            if(getCustomerKYCRecord.isEmpty()){
-                baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("Customer KYC Cannot be upgrade");
-                baseResponse.setResult(EMPTY_RESULT);
-                return baseResponse;
+            CustomerIdentityRecordEntity customerIdentityRecordEntity = isIdentityExist.get();
+            //Approval Status 0 for Accepted and 1 for Rejected;
+            String approvalStatus = upgradeKYCData.getApproval();
+            String approvalMessage = "";
+            String customerId = customerIdentityRecordEntity.getCustomerId();
+            if(Objects.equals("0", approvalStatus)){
+                //Check if user have active KYC
+                String kycLevel = "1";
+                List<CustomerIdentityRecordEntity> getCustomerKYCRecord = customerIdentityRecordRepo.customerActiveKyc(customerId);
+                if(!getCustomerKYCRecord.isEmpty()){
+                    kycLevel = "2";
+                }
+                //Get user data and Update User KC Level in the account table;
+                Optional<UserAccountEntity> getUserData = userAccountRepo.findByPhonenumber(customerId);
+                if(getUserData.isPresent()){
+                    UserAccountEntity userAccountEntity = getUserData.get();
+                    userAccountEntity.setKycLevel(kycLevel);
+                    userAccountRepo.save(userAccountEntity);
+                }
+                //Update KYC Status to approved and save
+                approvalMessage ="Identity Approved Successful, Customer KYC is not at Level"+kycLevel;
+                customerIdentityRecordEntity.setStatus("0");
+                customerIdentityRecordRepo.save(customerIdentityRecordEntity);
             }
-            int kycount = 0;
-            for(CustomerIdentityRecordEntity customerKyCData : getCustomerKYCRecord){
-                kycount +=1;
+            else{
+            //Delete the customer Identity number
+                approvalMessage ="Identity Rejected Successful";
+                customerIdentityRecordRepo.delete(customerIdentityRecordEntity);
             }
-            get
+
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(approvalMessage);
+            baseResponse.setResult(EMPTY_RESULT);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

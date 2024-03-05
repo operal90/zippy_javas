@@ -8,5 +8,6 @@ public class KycDTO {
     private String identityType;
     private String identityNumber;
     private String customerName;
+    private String status;
     private String dateCreated;
 }
