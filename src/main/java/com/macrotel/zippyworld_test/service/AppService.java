@@ -4,6 +4,7 @@ import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.IdentityTypeDTO;
+import com.macrotel.zippyworld_test.dto.KycDTO;
 import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.*;
 import com.macrotel.zippyworld_test.repo.*;
@@ -106,33 +107,33 @@ public class AppService {
             String referenceId = utilities.refernceId();
 
             //Generate Account Number
-//            String identityUrl = "https://vps.providusbank.com/vps/api/PiPCreateReservedAccountNumber";
-//            Map<String, String> headers = new HashMap<>();
-//            headers.put("Client-Id", "bUBjUjBUM0xfUHIpKCkuTTEyMw==");
-//            headers.put("X-Auth-Signature", " 9d5f1854bc0ebb9efa378354a5468ee156ae03c5265687c95cf9173d8eb62c1beb4ca616c40c35a55dd38a9a93415c3c98999f9d67020a1bc278bd3db23f26fc");
-//            headers.put("Content-Type", " application/json");
-//            HashMap<String, String> formParams = new HashMap<>();
-//            formParams.put("account_name", accountName);
-//            formParams.put("bvn", userCreationData.getIdentityNumber());
-//            Object generateAccountNumber = thirdPartyAPI.callAPI(identityUrl, HttpMethod.POST,headers,formParams);
-//
-//            String accountNumber = userCreationData.getPhonenumber();
-//            String userAccountName = accountName;
-//            Map<String, Object> apiResponse = (Map<String, Object>) generateAccountNumber;
-//            if(generateAccountNumber != null){
-//                String responseCode = (String) apiResponse.get("responseCode");
-//                if(Objects.equals(responseCode, "00")) {
-//                    accountNumber = (String) apiResponse.get("account_number");
-//                    userAccountName = (String) apiResponse.get("account_name");
-//                }
-//            }
+            String identityUrl = "https://vps.providusbank.com/vps/api/PiPCreateReservedAccountNumber";
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Client-Id", "bUBjUjBUM0xfUHIpKCkuTTEyMw==");
+            headers.put("X-Auth-Signature", " 9d5f1854bc0ebb9efa378354a5468ee156ae03c5265687c95cf9173d8eb62c1beb4ca616c40c35a55dd38a9a93415c3c98999f9d67020a1bc278bd3db23f26fc");
+            headers.put("Content-Type", " application/json");
+            HashMap<String, String> formParams = new HashMap<>();
+            formParams.put("account_name", accountName);
+            formParams.put("bvn", userCreationData.getIdentityNumber());
+            Object generateAccountNumber = thirdPartyAPI.callAPI(identityUrl, HttpMethod.POST,headers,formParams);
+
+            String accountNumber = userCreationData.getPhonenumber();
+            String userAccountName = accountName;
+            Map<String, Object> apiResponse = (Map<String, Object>) generateAccountNumber;
+            if(generateAccountNumber != null){
+                String responseCode = (String) apiResponse.get("responseCode");
+                if(Objects.equals(responseCode, "00")) {
+                    accountNumber = (String) apiResponse.get("account_number");
+                    userAccountName = (String) apiResponse.get("account_name");
+                }
+            }
             //Insert into User Account Table
             UserAccountEntity userAccountEntity = new UserAccountEntity();
             userAccountEntity.setFirstname(userCreationData.getFirstname());
             userAccountEntity.setLastname(userCreationData.getLastname());
             userAccountEntity.setPhonenumber(userCreationData.getPhonenumber());
-            userAccountEntity.setAccountNo("000000000");
-            userAccountEntity.setAccountName("userAccountName");
+            userAccountEntity.setAccountNo(accountNumber);
+            userAccountEntity.setAccountName(userAccountName);
             userAccountEntity.setGender(userCreationData.getGender());
             userAccountEntity.setPromoCode(userCreationData.getPromo_code());
             userAccountEntity.setReferrerCode(userCreationData.getReferrer_code());
@@ -221,6 +222,7 @@ public class AppService {
             customerIdentityRecord.setCustomerId(userCreationData.getPhonenumber());
             customerIdentityRecord.setKycId(userCreationData.getIdentityId());
             customerIdentityRecord.setIdentityNumber(userCreationData.getIdentityNumber());
+            customerIdentityRecord.setStatus("0");
             customerIdentityRecordRepo.save(customerIdentityRecord);
 
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
@@ -445,9 +447,16 @@ public class AppService {
         return baseResponse;
     }
 
-
-    public BaseResponse upgradeCustomerKyc(UpgradeKYCData upgradeKYCData){
+    public BaseResponse submitCustomerKyc(SubmitKYCData upgradeKYCData){
         try{
+            //Is customer Exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(upgradeKYCData.getCustomerId());
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Invalid Customer Id, Kindly Create Account");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
             //Is the identityNumber exist
             Optional<CustomerIdentityRecordEntity> isExistIdentityNumber = customerIdentityRecordRepo.findByIdentityNumber(upgradeKYCData.getIdentityNumber());
             if(isExistIdentityNumber.isPresent()){
@@ -476,7 +485,69 @@ public class AppService {
 
     public BaseResponse fetchCustomerKyC(String customerId){
         try{
+            //Is customer Exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Invalid Customer Id, Kindly Create Account");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get customer data from database
+            List<CustomerIdentityRecordEntity> getCustomerKYCRecord = customerIdentityRecordRepo.findByCustomerId(customerId);
+            if(getCustomerKYCRecord.isEmpty()){
+                baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+                baseResponse.setMessage(SUCCESS_MESSAGE);
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            ArrayList<Object> result = new ArrayList<>();
+            for(CustomerIdentityRecordEntity customerKyCData : getCustomerKYCRecord){
+                Long kycId = Long.parseLong(customerKyCData.getKycId());
+                Optional<IdentityEntity> getIdentity = identityRepo.findById(kycId);
+                IdentityEntity identityEntity = getIdentity.get();
+                KycDTO kycDTO = new KycDTO();
+                kycDTO.setCustomerId(customerKyCData.getCustomerId());
+                kycDTO.setCustomerName(customerKyCData.getIdentityName());
+                kycDTO.setIdentityType(identityEntity.getIdentityType());
+                kycDTO.setIdentityNumber(customerKyCData.getIdentityNumber());
+                kycDTO.setDateCreated(customerKyCData.getInsertedDt());
+                result.add(kycDTO);
+            }
 
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(result);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse upgradeCustomerKyc(String customerId){
+        try{
+            //Is customer Exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Invalid Customer Id, Kindly Create Account");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get customer data from database
+            List<CustomerIdentityRecordEntity> getCustomerKYCRecord = customerIdentityRecordRepo.findByCustomerId(customerId);
+            if(getCustomerKYCRecord.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer KYC Cannot be upgrade");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            int kycount = 0;
+            for(CustomerIdentityRecordEntity customerKyCData : getCustomerKYCRecord){
+                kycount +=1;
+            }
+            get
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

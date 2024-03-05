@@ -13,7 +13,7 @@ public class AppConstants {
     public static final String PAYMENT_VALIDATION_REGEX = "^(?i)(bank transfer|card payment)$";
 
     public static final String WITHDRAWAL_VALIDATION_REGEX = "^(?i)(portfolio balance|investment balance)$";
-    public static final String APPROVAL_VALIDATION_REGEX = "^(0|2)$";
+    public static final String APPROVAL_VALIDATION_REGEX = "^(0|1)$";
 
     public static final String CHARACTER_VALIDATION_REGEX = "^[a-zA-Z ]{3,}(?: [a-zA-Z ]+){0,2}$";
     public static final String PIN_VALIDATION_REGEX = "^\\d{4}$";

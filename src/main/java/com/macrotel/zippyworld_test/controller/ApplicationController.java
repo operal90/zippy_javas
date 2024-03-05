@@ -72,9 +72,16 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
-    @PostMapping("/upgrade_customer_kyc")
-    public ResponseEntity upgradeCustomerKyc(@Valid @RequestBody UpgradeKYCData upgradeKYCData){
-        BaseResponse baseResponse = appService.upgradeCustomerKyc(upgradeKYCData);
+    @PostMapping("/submit_customer_kyc")
+    public ResponseEntity submitCustomerKyc(@Valid @RequestBody SubmitKYCData upgradeKYCData){
+        BaseResponse baseResponse = appService.submitCustomerKyc(upgradeKYCData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
+    @GetMapping("/fetch_customer_kyc")
+    public ResponseEntity fetchUserKyc(@RequestParam("customerId") String customerId){
+        BaseResponse baseResponse = appService.fetchCustomerKyC(customerId);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }

@@ -19,6 +19,7 @@ public class CustomerIdentityRecordEntity implements Serializable {
     private String identityNumber;
     private String identityName;
     private String insertedDt;
+    private String status;
 
     public CustomerIdentityRecordEntity() {
         this.insertedDt = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
