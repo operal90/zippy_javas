@@ -455,6 +455,7 @@ public class AppService {
                 baseResponse.setMessage("Identity Number already exist ");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
+
             }
             CustomerIdentityRecordEntity customerIdentityRecordEntity = new CustomerIdentityRecordEntity();
             customerIdentityRecordEntity.setCustomerId(upgradeKYCData.getCustomerId());
