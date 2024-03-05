@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Table(name = "aggregator_user_accounts")
 public class AggregatorUserAccountEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
     Long id;
     private String aggregatorCode;
     private String agentNumber;

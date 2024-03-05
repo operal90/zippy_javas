@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Table(name = "identities")
 public class IdentityEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private String identityType;
     private String createdAt;

@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Table(name = "customer_commission_wallets")
 public class CustomerCommissionWalletEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private String referenceId;
     private String operationType;

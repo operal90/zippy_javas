@@ -1,9 +1,6 @@
 package com.macrotel.zippyworld_test.controller;
 
-import com.macrotel.zippyworld_test.pojo.BaseResponse;
-import com.macrotel.zippyworld_test.pojo.IdentityData;
-import com.macrotel.zippyworld_test.pojo.UserCreationData;
-import com.macrotel.zippyworld_test.pojo.VerifyUserIdentityData;
+import com.macrotel.zippyworld_test.pojo.*;
 import com.macrotel.zippyworld_test.service.AppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -63,9 +60,9 @@ public class ApplicationController {
         return new ResponseEntity<>(baseResponse,status);
     }
 
-    @GetMapping("/generate_registration_otp")
-    public ResponseEntity generateRegistrationOtp(@RequestParam("phoneNumber") String phoneNumber){
-        BaseResponse baseResponse = appService.generateRegistrationOTPCode(phoneNumber);
+    @PostMapping("/generate_registration_otp")
+    public ResponseEntity generateRegistrationOtp(@Valid @RequestBody NotificationData notificationData){
+        BaseResponse baseResponse = appService.generateRegistrationOTPCode(notificationData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
@@ -75,8 +72,12 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
-
-
+    @PostMapping("/upgrade_customer_kyc")
+    public ResponseEntity upgradeCustomerKyc(@Valid @RequestBody UpgradeKYCData upgradeKYCData){
+        BaseResponse baseResponse = appService.upgradeCustomerKyc(upgradeKYCData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse handleValidationExceptions(

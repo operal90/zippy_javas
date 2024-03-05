@@ -10,7 +10,7 @@ import java.io.Serializable;
 @Table(name = "ledger_accounts")
 public class LedgerAccountEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private String referenceId;
     private String operationType;

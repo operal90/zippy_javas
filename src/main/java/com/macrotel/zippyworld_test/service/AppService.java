@@ -1,27 +1,22 @@
 package com.macrotel.zippyworld_test.service;
 
+import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
+import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.IdentityTypeDTO;
 import com.macrotel.zippyworld_test.entity.*;
-import com.macrotel.zippyworld_test.pojo.BaseResponse;
-import com.macrotel.zippyworld_test.pojo.IdentityData;
-import com.macrotel.zippyworld_test.pojo.UserCreationData;
-import com.macrotel.zippyworld_test.pojo.VerifyUserIdentityData;
+import com.macrotel.zippyworld_test.pojo.*;
 import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Logger;
-import com.macrotel.Utilities;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -31,7 +26,8 @@ public class AppService {
 
     BaseResponse baseResponse = new BaseResponse(true);
     ThirdPartyAPI thirdPartyAPI = new ThirdPartyAPI();
-    Utilities utilities = new Utilities();
+    UtilityConfiguration utilities = new UtilityConfiguration();
+    Notification notification = new Notification();
     private static final Logger LOG = Logger.getLogger(AppService.class.getName());
 
     @Autowired
@@ -52,6 +48,8 @@ public class AppService {
     SecurityQuestionRepo securityQuestionRepo;
     @Autowired
     OTPRepo otpRepo;
+    @Autowired
+    CustomerIdentityRecordRepo customerIdentityRecordRepo;
 
 
     public BaseResponse testing(){
@@ -103,38 +101,38 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-            //Convert User FirstName and Lastname to generate Account Name, get Transaction Id, Reference Id
+            //Convert User FirstName and Lastname to generate Account Name, get TransactionId, ReferenceId
             String accountName = userCreationData.getFirstname() +' '+ userCreationData.getLastname();
             String referenceId = utilities.refernceId();
 
             //Generate Account Number
-            String identityUrl = "https://vps.providusbank.com/vps/api/PiPCreateReservedAccountNumber";
-            Map<String, String> headers = new HashMap<>();
-            headers.put("Client-Id", "bUBjUjBUM0xfUHIpKCkuTTEyMw==");
-            headers.put("X-Auth-Signature", " 9d5f1854bc0ebb9efa378354a5468ee156ae03c5265687c95cf9173d8eb62c1beb4ca616c40c35a55dd38a9a93415c3c98999f9d67020a1bc278bd3db23f26fc");
-            headers.put("Content-Type", " application/json");
-            HashMap<String, String> formParams = new HashMap<>();
-            formParams.put("account_name", accountName);
-            formParams.put("bvn", userCreationData.getIdentityNumber());
-            Object generateAccountNumber = thirdPartyAPI.callAPI(identityUrl, HttpMethod.POST,headers,formParams);
-
-            String accountNumber = userCreationData.getPhonenumber();
-            String userAccountName = accountName;
-            Map<String, Object> apiResponse = (Map<String, Object>) generateAccountNumber;
-            if(generateAccountNumber != null){
-                String responseCode = (String) apiResponse.get("responseCode");
-                if(Objects.equals(responseCode, "00")) {
-                    accountNumber = (String) apiResponse.get("account_number");
-                    userAccountName = (String) apiResponse.get("account_name");
-                }
-            }
+//            String identityUrl = "https://vps.providusbank.com/vps/api/PiPCreateReservedAccountNumber";
+//            Map<String, String> headers = new HashMap<>();
+//            headers.put("Client-Id", "bUBjUjBUM0xfUHIpKCkuTTEyMw==");
+//            headers.put("X-Auth-Signature", " 9d5f1854bc0ebb9efa378354a5468ee156ae03c5265687c95cf9173d8eb62c1beb4ca616c40c35a55dd38a9a93415c3c98999f9d67020a1bc278bd3db23f26fc");
+//            headers.put("Content-Type", " application/json");
+//            HashMap<String, String> formParams = new HashMap<>();
+//            formParams.put("account_name", accountName);
+//            formParams.put("bvn", userCreationData.getIdentityNumber());
+//            Object generateAccountNumber = thirdPartyAPI.callAPI(identityUrl, HttpMethod.POST,headers,formParams);
+//
+//            String accountNumber = userCreationData.getPhonenumber();
+//            String userAccountName = accountName;
+//            Map<String, Object> apiResponse = (Map<String, Object>) generateAccountNumber;
+//            if(generateAccountNumber != null){
+//                String responseCode = (String) apiResponse.get("responseCode");
+//                if(Objects.equals(responseCode, "00")) {
+//                    accountNumber = (String) apiResponse.get("account_number");
+//                    userAccountName = (String) apiResponse.get("account_name");
+//                }
+//            }
             //Insert into User Account Table
             UserAccountEntity userAccountEntity = new UserAccountEntity();
             userAccountEntity.setFirstname(userCreationData.getFirstname());
             userAccountEntity.setLastname(userCreationData.getLastname());
             userAccountEntity.setPhonenumber(userCreationData.getPhonenumber());
-            userAccountEntity.setAccountNo(accountNumber);
-            userAccountEntity.setAccountName(userAccountName);
+            userAccountEntity.setAccountNo("000000000");
+            userAccountEntity.setAccountName("userAccountName");
             userAccountEntity.setGender(userCreationData.getGender());
             userAccountEntity.setPromoCode(userCreationData.getPromo_code());
             userAccountEntity.setReferrerCode(userCreationData.getReferrer_code());
@@ -143,7 +141,7 @@ public class AppService {
             userAccountEntity.setIdentityNumber(userCreationData.getIdentityNumber());
             userAccountEntity.setStatus("0");
             userAccountEntity.setWtlStatus("2");
-            userAccountEntity.setKycLevel("");
+            userAccountEntity.setKycLevel("1");
             userAccountEntity.setParentAggregatorCode(userCreationData.getAggregator_code());
             userAccountEntity.setGender(userCreationData.getGender());
             userAccountEntity.setEmail(userCreationData.getEmail());
@@ -156,6 +154,7 @@ public class AppService {
             userAccountEntity.setAgreed(userCreationData.getAgreed());
             userAccountEntity.setCommissionMode("INSTANCE");
             userAccountEntity.setOperationId(referenceId);
+            userAccountEntity.setIdentityPhonenumber(userCreationData.getIdentity_phonenumber());
             userAccountRepo.save(userAccountEntity);
 
             //Insert into Customer Wallet
@@ -215,6 +214,14 @@ public class AppService {
             messageServiceEntity.setSms("1");
             messageServiceEntity.setWhatsapp("1");
             messageServiceRepo.save(messageServiceEntity);
+
+            //Insert into Customer Identity Record
+            CustomerIdentityRecordEntity customerIdentityRecord = new CustomerIdentityRecordEntity();
+            customerIdentityRecord.setIdentityName(userCreationData.getFirstname()+" "+userCreationData.getLastname());
+            customerIdentityRecord.setCustomerId(userCreationData.getPhonenumber());
+            customerIdentityRecord.setKycId(userCreationData.getIdentityId());
+            customerIdentityRecord.setIdentityNumber(userCreationData.getIdentityNumber());
+            customerIdentityRecordRepo.save(customerIdentityRecord);
 
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
             baseResponse.setMessage("Account Created Successful");
@@ -369,31 +376,31 @@ public class AppService {
         return baseResponse;
     }
 
-    public BaseResponse generateRegistrationOTPCode(String phoneNumber){
+    public BaseResponse generateRegistrationOTPCode(NotificationData notificationData){
         try{
-            if(phoneNumber.isEmpty()){
-                baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("Phone Number cannot be empty");
-                baseResponse.setResult(EMPTY_RESULT);
-                return baseResponse;
-            }
-            if(phoneNumber.length()<11){
-                baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("Phone Number cannot be less than 11");
-                baseResponse.setResult(EMPTY_RESULT);
-                return baseResponse;
-            }
+            String phoneNumber = notificationData.phoneNumber;
+            String emailAddress = notificationData.emailAddress;
+            String username = utilities.extractUsername(emailAddress);
             String userOtp = utilities.otpCode(7);
             OTPEntity otpEntity = new OTPEntity();
             otpEntity.setToken1(userOtp);
             otpEntity.setToken(utilities.shaEncryption(userOtp));
-            otpEntity.setCustomerId(phoneNumber);
+            otpEntity.setCustomerId(notificationData.getPhoneNumber());
+            otpEntity.setEmail(notificationData.getEmailAddress());
             otpEntity.setOperationType("REGISTRATION");
             otpRepo.save(otpEntity);
 
+            String notificationMessage = "Welcome to Zippyworld! " +
+                                        "Your One-Time Passcode (OTP) is: "+userOtp+"." +
+                                        " Use it to complete registration securely. Reach out to support if assistance is needed. Thank you for joining us!";
+            String smsNotification = notification.smsNotification(phoneNumber, "Zippyworld", notificationMessage);
+            String emailNotification = notification.emailNotification(emailAddress,username,"Zippyworld", notificationMessage);
+            String whatsAppNotification = notification.whatsappNotification(phoneNumber, "Zippyworld", notificationMessage);
+            HashMap<String,String> result = new HashMap<>();
+            result.put("otpCode", userOtp);
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
             baseResponse.setMessage(SUCCESS_MESSAGE);
-            baseResponse.setResult(EMPTY_RESULT);
+            baseResponse.setResult(result);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
@@ -415,7 +422,7 @@ public class AppService {
             LocalDateTime previousTime = LocalDateTime.parse(previousOtpTime, DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
             LocalDateTime currentTime = LocalDateTime.now();
             long minutesDifference = ChronoUnit.MINUTES.between(previousTime, currentTime);
-            if (minutesDifference > 5) {
+            if (minutesDifference > 7) {
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
                 baseResponse.setMessage("OTP Code has expired, Kindly generate another one");
                 baseResponse.setResult(EMPTY_RESULT);
@@ -439,5 +446,41 @@ public class AppService {
     }
 
 
+    public BaseResponse upgradeCustomerKyc(UpgradeKYCData upgradeKYCData){
+        try{
+            //Is the identityNumber exist
+            Optional<CustomerIdentityRecordEntity> isExistIdentityNumber = customerIdentityRecordRepo.findByIdentityNumber(upgradeKYCData.getIdentityNumber());
+            if(isExistIdentityNumber.isPresent()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Identity Number already exist ");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            CustomerIdentityRecordEntity customerIdentityRecordEntity = new CustomerIdentityRecordEntity();
+            customerIdentityRecordEntity.setCustomerId(upgradeKYCData.getCustomerId());
+            customerIdentityRecordEntity.setKycId(upgradeKYCData.getIdentityId());
+            customerIdentityRecordEntity.setIdentityName(upgradeKYCData.getIdentityName());
+            customerIdentityRecordEntity.setIdentityNumber(upgradeKYCData.getIdentityNumber());
+            customerIdentityRecordRepo.save(customerIdentityRecordEntity);
+
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage("KYC Submitted successful, Await Approval");
+            baseResponse.setResult(EMPTY_RESULT);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse fetchCustomerKyC(String customerId){
+        try{
+
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
 
 }

@@ -9,7 +9,7 @@ import java.io.Serializable;
 @Table(name = "qr_details")
 public class QRDetailsEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private String customerId;
     private String status;

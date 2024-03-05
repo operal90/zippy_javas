@@ -10,7 +10,7 @@ import java.io.Serializable;
 @Table (name = "security_questions")
 public class SecurityQuestionEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private String question;
     private String createdAt;

@@ -5,13 +5,15 @@ import lombok.Data;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Data
 @Entity
 @Table(name = "user_accounts")
 public class UserAccountEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     private String operationId;
     private String firstname;
@@ -39,8 +41,9 @@ public class UserAccountEntity implements Serializable {
     private String commissionMode;
     private String registeredAt;
     private String accountName;
+    private String identityPhonenumber;
 
     public UserAccountEntity() {
-        this.registeredAt = String.valueOf(LocalDate.now());
+        this.registeredAt = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
     }
 }

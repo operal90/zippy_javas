@@ -10,8 +10,8 @@ import java.io.Serializable;
 @Table(name = "message_services")
 public class MessageServiceEntity implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String customerId;
     private String email;
     private String sms;

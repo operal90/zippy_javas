@@ -31,13 +31,15 @@ public class UserCreationData {
     @NotEmpty(message = "Provide PIN")
     @Pattern(regexp = PIN_VALIDATION_REGEX, message = "PIN can only be 4 digit")
     private String pin;
-    @NotEmpty(message = "Invalid Question id")
-    private String uuid;
+    @NotEmpty(message = "Invalid Security Question id")
+    private String secure_id;
     @NotEmpty(message = "Answer cannot be empty")
     private String answer;
     @NotEmpty(message = "Invalid Request Parameters (transaction id)")
     private String transaction_id;
-    private String secure_id;
+    @NotEmpty(message = "Identity Phone Number cannot be empty")
+    private String identity_phonenumber;
+    private String uuid;
     private String referral_phonenumber;
     private String aggregator_code;
     private String agreed;
