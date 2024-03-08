@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Random;
 
 public class UtilityConfiguration {
@@ -17,6 +18,19 @@ public class UtilityConfiguration {
     }
     public String randomAlphanumeric(int length){
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder();
+
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            int index = random.nextInt(characters.length());
+            char randomChar = characters.charAt(index);
+            sb.append(randomChar);
+        }
+
+        return sb.toString();
+    }
+    public String randomAlphabet(int length){
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         StringBuilder sb = new StringBuilder();
 
         Random random = new Random();
@@ -93,7 +107,7 @@ public class UtilityConfiguration {
         }
     }
 
-    public String refernceId(){
+    public String referenceId(){
         String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuuMMddHHmmss")));
         return todayDate+this.randomDigit(3);
     }
@@ -114,5 +128,24 @@ public class UtilityConfiguration {
             ex.printStackTrace();
         }
         return hexString.toString().toUpperCase();
+    }
+
+    public String getOperationId(String type){
+        String operationValue = "";
+        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuuMMddHHmmss")));
+        if(Objects.equals(type, "NU")){
+            operationValue = todayDate+this.randomDigit(10);
+        } else if (Objects.equals(type, "AN")) {
+            operationValue = todayDate+this.randomAlphanumeric(2);
+        } else if (Objects.equals(type,"AL")) {
+            operationValue = todayDate+this.randomAlphabet(2);
+        }
+        return operationValue;
+    }
+
+    public Float formattedAmount(String amount){
+        Float removeCommaAmount = Float.parseFloat(this.removeComma(amount));
+        DecimalFormat decimalFormat = new DecimalFormat("#.#####");
+        return Float.parseFloat(decimalFormat.format(removeCommaAmount));
     }
 }

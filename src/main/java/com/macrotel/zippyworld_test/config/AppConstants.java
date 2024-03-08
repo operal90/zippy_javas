@@ -21,5 +21,6 @@ public class AppConstants {
     public static final String SINGLE_DIGIT_VALIDATION_REGEX = "^\\d{1}$";
 
     public  static final String BVN_NIN_VALIDATION_REGEX="^\\d{11}$";
+    public static final String NUMBER_VALIDATION_REGEX = "^\\d+$";
 
 }

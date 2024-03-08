@@ -1,6 +1,7 @@
 package com.macrotel.zippyworld_test.service;
 
 import com.macrotel.zippyworld_test.config.Notification;
+import com.macrotel.zippyworld_test.repo.SqlQueries;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.IdentityTypeDTO;
@@ -51,6 +52,16 @@ public class AppService {
     OTPRepo otpRepo;
     @Autowired
     CustomerIdentityRecordRepo customerIdentityRecordRepo;
+    @Autowired
+    BankTransferTxnRepo bankTransferTxnRepo;
+    @Autowired
+    CableTvTxnLogRepo cableTvTxnLogRepo;
+    @Autowired
+    ElectricityTxnLogRepo electricityTxnLogRepo;
+    @Autowired
+    NetworkTxnLogRepo networkTxnLogRepo;
+    @Autowired
+    SqlQueries sqlQueries;
 
 
     public BaseResponse testing(){
@@ -104,7 +115,7 @@ public class AppService {
             }
             //Convert User FirstName and Lastname to generate Account Name, get TransactionId, ReferenceId
             String accountName = userCreationData.getFirstname() +' '+ userCreationData.getLastname();
-            String referenceId = utilities.refernceId();
+            String referenceId = utilities.referenceId();
 
             //Generate Account Number
             String identityUrl = "https://vps.providusbank.com/vps/api/PiPCreateReservedAccountNumber";
@@ -152,6 +163,7 @@ public class AppService {
             userAccountEntity.setAnswer(utilities.shaEncryption(userCreationData.getAnswer()));
             userAccountEntity.setUserType("1");
             userAccountEntity.setUserPackageId("1");
+            userAccountEntity.setPndStatus("1");
             userAccountEntity.setAgreed(userCreationData.getAgreed());
             userAccountEntity.setCommissionMode("INSTANCE");
             userAccountEntity.setOperationId(referenceId);
@@ -537,7 +549,15 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
+
             CustomerIdentityRecordEntity customerIdentityRecordEntity = isIdentityExist.get();
+            //Check if the identity is previously approved;
+            if(Objects.equals("0", customerIdentityRecordEntity.getStatus())){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Identity has been previously approved");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
             //Approval Status 0 for Accepted and 1 for Rejected;
             String approvalStatus = upgradeKYCData.getApproval();
             String approvalMessage = "";
@@ -557,7 +577,7 @@ public class AppService {
                     userAccountRepo.save(userAccountEntity);
                 }
                 //Update KYC Status to approved and save
-                approvalMessage ="Identity Approved Successful, Customer KYC is not at Level"+kycLevel;
+                approvalMessage ="Identity Approved Successful, Customer KYC is now at Level"+kycLevel;
                 customerIdentityRecordEntity.setStatus("0");
                 customerIdentityRecordRepo.save(customerIdentityRecordEntity);
             }
@@ -570,6 +590,93 @@ public class AppService {
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
             baseResponse.setMessage(approvalMessage);
             baseResponse.setResult(EMPTY_RESULT);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    //Utilities
+    public BaseResponse airtimePurchase(AirtimePurchaseData airtimePurchaseData){
+        try{
+            //Check if user has done the same transaction before in the space of 5 minutes
+            String customerId = airtimePurchaseData.getPhonenumber();
+            String recipient = airtimePurchaseData.getBeneficiary_phonenumber();
+            Float amount = utilities.formattedAmount(airtimePurchaseData.getAmount());
+            Optional<NetworkTxnLogEntity> isTransactionExist = networkTxnLogRepo.customerRecipientLastTransaction(customerId,recipient);
+            if (isTransactionExist.isPresent()){
+                NetworkTxnLogEntity networkTxnLogEntity = isTransactionExist.get();
+                //Compare the time to check if its less than 5 min
+                LocalDateTime lastTime = LocalDateTime.parse(networkTxnLogEntity.getTimeIn(), DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+                LocalDateTime currentTime = LocalDateTime.now();
+                long minutesDifference = ChronoUnit.MINUTES.between(lastTime, currentTime);
+                if (minutesDifference > 5) {
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("Please wait for 3 minutes before you can recharge to "+recipient);
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+            //Get User Details
+            Optional<UserAccountEntity> getCustomerDetail = userAccountRepo.findByPhonenumber(customerId);
+            UserAccountEntity userAccountEntity =  getCustomerDetail.get();
+            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
+            String customerEmail = userAccountEntity.getEmail();
+            String userTypeId = userAccountEntity.getUserType();
+            String userPackageId = userAccountEntity.getUserPackageId();
+            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(2);
+            String commissionMode = userAccountEntity.getCommissionMode();
+            String pndStatus = userAccountEntity.getPndStatus();
+
+            //Check if User is on Post No Debit
+            if(!Objects.equals("1", pndStatus)){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get Network Operator Service Code
+            String networkServiceCode = airtimePurchaseData.getService_code();
+            String networkOperatorCode = airtimePurchaseData.getNetwork_code();
+            String txnId = customerId+"-"+airtimePurchaseData.getTransaction_id();
+            String operationId = utilities.getOperationId("NU");
+            List<Object[]> getNetworkOperatorServiceCode = sqlQueries.networkOperatorServiceCode(networkServiceCode,networkOperatorCode);
+            if(getNetworkOperatorServiceCode.isEmpty()){
+                NetworkTxnLogEntity networkTxnLogEntity = new NetworkTxnLogEntity();
+                networkTxnLogEntity.setOperationId(operationId);
+                networkTxnLogEntity.setTxnId(txnId);
+                networkTxnLogEntity.setChannel(airtimePurchaseData.getChannel());
+                networkTxnLogEntity.setUserTypeId(userTypeId);
+                networkTxnLogEntity.setCustomerId(customerId);
+                networkTxnLogEntity.setUserPackageId(userPackageId);
+                networkTxnLogEntity.setAmount(amount);
+                networkTxnLogEntity.setCommissionCharge("");
+                networkTxnLogEntity.setAmountCharge("");
+                networkTxnLogEntity.setRecipientNo(recipient);
+                networkTxnLogEntity.setServiceAccountNo("");
+                networkTxnLogEntity.setProvider("");
+                networkTxnLogEntity.setRequestParam("");
+                networkTxnLogEntity.setStatus("3");
+                networkTxnLogEntity.setResponseComplexMessage("Invalid Network Code and Service Code");
+                networkTxnLogEntity.setResponseActualMessage("Unsuccessful");
+                networkTxnLogRepo.save(networkTxnLogEntity);
+
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Please select the Network");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            Object[] networkOperatorServiceCode =getNetworkOperatorServiceCode.get(0);
+            String provider = networkOperatorServiceCode[4].toString();
+            String network = networkOperatorServiceCode[2].toString();
+            String serviceAccountNumber = networkOperatorServiceCode[0].toString();
+            String serviceCommissionAccountNumber = networkOperatorServiceCode[1].toString();
+            String operationCode = networkOperatorServiceCode[3].toString();
+
+
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
