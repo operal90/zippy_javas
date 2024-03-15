@@ -32,36 +32,38 @@ public class UtilityService {
         }
         Object[] agentCommission = getAgentCommission.get(0);
         String commissionType = agentCommission[0].toString();
-        double zonalManager = (double) agentCommission[1];
-        double businessManager = (double) agentCommission[2];
-        double businessOwner = (double) agentCommission[3];
+        double zonalManager = (agentCommission[1] !=null &&!agentCommission[1].toString().isEmpty()) ? Double.parseDouble(agentCommission[1].toString()) : 0.0;
+        double businessManager = (agentCommission[2] !=null &&!agentCommission[2].toString().isEmpty()) ? Double.parseDouble(agentCommission[2].toString()) : 0.0;
+        double businessOwner = (agentCommission[3] !=null &&!agentCommission[3].toString().isEmpty()) ? Double.parseDouble(agentCommission[3].toString()) : 0.0;
+
+        //Get Parent Aggregator Code
         String parentAggregatorCode = this.getParentAggregatorCodeOne(customerId);
 
         //Get UserSettingValue
         Map<String, Object> getUserSettings = (Map<String, Object>) this.getSettingValue("DEFAULT_AGGREGATOR_CODE");
         String userSettingsValue = (String) getUserSettings.get("result");
-
         if(!parentAggregatorCode.equals(userSettingsValue)){
              if(Objects.equals(buzCharacter,"BM")){
                  String zmCustomerId = this.getCustomerIdByCode(parentAggregatorCode);
                  double bmCommissionPercent  = businessOwner + businessManager;
                  float bmCommission = utilityConfiguration.formattedAmount(String.valueOf(bmCommissionPercent/100 * amount));
                  float zmCommission = utilityConfiguration.formattedAmount(String.valueOf(zonalManager /100 * amount));
+
                  Map<String, String> bo = new HashMap<>();
                  bo.put("agentType", "BO");
                  bo.put("customerId", "0");
-                 bo.put("commission", "0");
+                 bo.put("commission", "0.0");
                  bo.put("process", "NO");
 
                  Map<String, Object> bm = new HashMap<>();
-                 bm.put("agent_type", "BM");
-                 bm.put("customer_id", customerId);
+                 bm.put("agentType", "BM");
+                 bm.put("customerId", customerId);
                  bm.put("commission", String.valueOf(bmCommission));
                  bm.put("process", "NO");
 
                  Map<String, Object> zm = new HashMap<>();
-                 zm.put("agent_type", "ZM");
-                 zm.put("customer_id", zmCustomerId);
+                 zm.put("agentType", "ZM");
+                 zm.put("customerId", zmCustomerId);
                  zm.put("commission", String.valueOf(zmCommission));
                  zm.put("process", "YES");
 
@@ -84,14 +86,14 @@ public class UtilityService {
                  bo.put("process", "NO");
 
                  Map<String, Object> bm = new HashMap<>();
-                 bm.put("agent_type", "BM");
-                 bm.put("customer_id", bmCustomerId);
+                 bm.put("agentType", "BM");
+                 bm.put("customerId", bmCustomerId);
                  bm.put("commission", String.valueOf(bmCommission));
                  bm.put("process", "YES");
 
                  Map<String, Object> zm = new HashMap<>();
-                 zm.put("agent_type", "ZM");
-                 zm.put("customer_id", zmCustomerId);
+                 zm.put("agentType", "ZM");
+                 zm.put("customerId", zmCustomerId);
                  zm.put("commission", String.valueOf(zmCommission));
                  zm.put("process", "YES");
 

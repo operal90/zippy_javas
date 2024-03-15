@@ -43,6 +43,7 @@ public class UserAccountEntity implements Serializable {
     private String accountName;
     private String identityPhonenumber;
     private String pndStatus;
+    private String aggregatorCode;
 
     public UserAccountEntity() {
         this.registeredAt = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));

@@ -711,14 +711,16 @@ public class AppService {
                 UtilityResponse getAgentCommissionStructure =utilityService.agentCommissionStructure(totalCommission,buzAggregatorCode,customerId,userTypeId,userPackageId,serviceAccountNumber);
                 if(!getAgentCommissionStructure.getStatusCode().equals(ERROR_STATUS_CODE)){
                     Map<String, Object> result = (Map<String, Object>) getAgentCommissionStructure.getResult();
-                    List<Map<String, Object>>agentDetailList = (List<Map<String, Object>>)result;
-                    for (Map<String, Object> agentDetail : agentDetailList) {
+                    for (Map.Entry<String, Object> entry : result.entrySet()) {
+                        Map<String, Object> agentDetail = (Map<String, Object>) entry.getValue();
+                        System.out.println(agentDetail);
                         String agentType = (String) agentDetail.get("agent_type");
-                        if (agentType.equals("BO")) {
-                            commissionAmount = (double) agentDetail.get("commission");
-                        } if (agentType.equals("BM")) {
-                            commissionAmount = (double) agentDetail.get("commission");
-                        }
+
+//                        if (agentType.equals("BO")) {
+//                            commissionAmount = (double) agentDetail.get("commission");
+//                        } if (agentType.equals("BM")) {
+//                            commissionAmount = (double) agentDetail.get("commission");
+//                        }
                     }
                 }
 
