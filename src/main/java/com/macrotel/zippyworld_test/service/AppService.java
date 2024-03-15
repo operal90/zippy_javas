@@ -32,6 +32,8 @@ public class AppService {
     Notification notification = new Notification();
     private static final Logger LOG = Logger.getLogger(AppService.class.getName());
 
+   private final UtilityService utilityService;
+
     @Autowired
     UserAccountRepo userAccountRepo;
     @Autowired
@@ -62,6 +64,10 @@ public class AppService {
     NetworkTxnLogRepo networkTxnLogRepo;
     @Autowired
     SqlQueries sqlQueries;
+
+    public AppService(UtilityService utilityService) {
+        this.utilityService = utilityService;
+    }
 
 
     public BaseResponse testing(){
@@ -406,8 +412,9 @@ public class AppService {
 
             String notificationMessage = "Welcome to Zippyworld! " +
                                         "Your One-Time Passcode (OTP) is: "+userOtp+"." +
-                                        " Use it to complete registration securely. Reach out to support if assistance is needed. Thank you for joining us!";
-            String smsNotification = notification.smsNotification(phoneNumber, "Zippyworld", notificationMessage);
+                                        " Use it to complete registration securely. Reach out on 08039855986 for further enquiry. Thank you for joining us!";
+            String smsNotificationMessage = "Welcome to Zippyworld! Your One Time PIN OTP:"+ userOtp+". Use it to complete registration securely. Reach out  on 09039855986 for further enquires";
+            String smsNotification = notification.smsNotification(phoneNumber, "Zippyworld", smsNotificationMessage);
             String emailNotification = notification.emailNotification(emailAddress,username,"Zippyworld", notificationMessage);
             String whatsAppNotification = notification.whatsappNotification(phoneNumber, "Zippyworld", notificationMessage);
             HashMap<String,String> result = new HashMap<>();
@@ -626,7 +633,7 @@ public class AppService {
             String userTypeId = userAccountEntity.getUserType();
             String userPackageId = userAccountEntity.getUserPackageId();
             String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
-            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(2);
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
             String commissionMode = userAccountEntity.getCommissionMode();
             String pndStatus = userAccountEntity.getPndStatus();
 
@@ -668,7 +675,7 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-
+            //Network Provider Details
             Object[] networkOperatorServiceCode =getNetworkOperatorServiceCode.get(0);
             String provider = networkOperatorServiceCode[4].toString();
             String network = networkOperatorServiceCode[2].toString();
@@ -676,6 +683,51 @@ public class AppService {
             String serviceCommissionAccountNumber = networkOperatorServiceCode[1].toString();
             String operationCode = networkOperatorServiceCode[3].toString();
 
+
+            //Check if users aggregator can get commission
+            int cafValue = 1;
+            double totalCommission = 0;
+            double commissionAmount = 0;
+            int aggregatorCommissionAmount = 0;
+            if(Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode, "BM")){
+                cafValue = 0;
+                //Get User Commission Value
+                List<Object[]> getCustomerCommission = sqlQueries.getCustomerCommissionDetail(serviceAccountNumber,userTypeId,userPackageId);
+                Object[] customerCommission = getCustomerCommission.get(0);
+                String cmt = customerCommission[0].toString();
+                double cmp = (customerCommission[1] != null && !customerCommission[1].toString().isEmpty()) ? Double.parseDouble(customerCommission[1].toString()) : 0.0;
+                double csc = (customerCommission[2] != null && !customerCommission[2].toString().isEmpty()) ? Double.parseDouble(customerCommission[2].toString()) : 0.0;
+                double msv = (customerCommission[3] != null && !customerCommission[3].toString().isEmpty()) ? Double.parseDouble(customerCommission[3].toString()) : 0.0;
+
+                if(Objects.equals(cmt,"PT")){
+                    double userCommission = (amount * cmp) /100;
+                    double masterCommission = (msv > 0) ? (amount * msv)/100 : msv;
+                    totalCommission = userCommission + masterCommission;
+                }
+                else {
+                    totalCommission = csc + msv;
+                }
+
+                UtilityResponse getAgentCommissionStructure =utilityService.agentCommissionStructure(totalCommission,buzAggregatorCode,customerId,userTypeId,userPackageId,serviceAccountNumber);
+                if(!getAgentCommissionStructure.getStatusCode().equals(ERROR_STATUS_CODE)){
+                    Map<String, Object> result = (Map<String, Object>) getAgentCommissionStructure.getResult();
+                    List<Map<String, Object>>agentDetailList = (List<Map<String, Object>>)result;
+                    for (Map<String, Object> agentDetail : agentDetailList) {
+                        String agentType = (String) agentDetail.get("agent_type");
+                        if (agentType.equals("BO")) {
+                            commissionAmount = (double) agentDetail.get("commission");
+                        } if (agentType.equals("BM")) {
+                            commissionAmount = (double) agentDetail.get("commission");
+                        }
+                    }
+                }
+
+
+                //
+            }
+            else{
+
+            }
 
         }
         catch (Exception ex){
