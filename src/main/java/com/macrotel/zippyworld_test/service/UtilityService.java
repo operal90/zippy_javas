@@ -1,8 +1,10 @@
 package com.macrotel.zippyworld_test.service;
 
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
+import com.macrotel.zippyworld_test.entity.NetworkTxnLogEntity;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
+import com.macrotel.zippyworld_test.repo.NetworkTxnLogRepo;
 import com.macrotel.zippyworld_test.repo.SettingRepo;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,8 @@ public class UtilityService {
     SqlQueries sqlQueries;
     @Autowired
     SettingRepo settingRepo;
+    @Autowired
+    NetworkTxnLogRepo networkTxnLogRepo;
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
         //Get AgentCommissionStructure
@@ -189,6 +193,30 @@ public class UtilityService {
         }
         return result;
     }
+
+    public Object getServiceCommission2(double amount, String serviceAccountNumber,String userTypeId, String userPackageId){
+        HashMap<String, Double> result = new HashMap<>();
+        double commissionUser = 0.0;
+        double commissionMaster = 0.0;
+        List<Object[]> getCustomerCommission = sqlQueries.getCustomerCommissionDetail(serviceAccountNumber,userTypeId,userPackageId);
+        Object[] customerCommission = getCustomerCommission.get(0);
+        String cmt = customerCommission[0].toString();
+        double cmp = (customerCommission[1] != null && !customerCommission[1].toString().isEmpty()) ? Double.parseDouble(customerCommission[1].toString()) : 0.0;
+        double csc = (customerCommission[2] != null && !customerCommission[2].toString().isEmpty()) ? Double.parseDouble(customerCommission[2].toString()) : 0.0;
+        double msv = (customerCommission[3] != null && !customerCommission[3].toString().isEmpty()) ? Double.parseDouble(customerCommission[3].toString()) : 0.0;
+
+        if(Objects.equals(cmt,"PT")){
+            commissionUser = (amount * cmp) /100;
+            commissionMaster = (msv > 0) ? (amount * msv)/100 : msv;
+        }
+        else {
+            commissionUser = csc;
+            commissionMaster = msv;
+        }
+        result.put("commissionUser", commissionUser);
+        result.put("commissionMaster", commissionMaster);
+        return result;
+    }
     private void setResultValues(Map<String, String> result, Object[] promoCommissionQuery) {
         result.put("statusCode", "0");
         result.put("cmt", promoCommissionQuery[8].toString());
@@ -227,5 +255,47 @@ public class UtilityService {
         List<Object[]> getCustomerDateDiff = sqlQueries.getRegistrationDateDiff(phoneNumber);
         Object[] customerDateDiff = getCustomerDateDiff.get(0);
         return  Double.parseDouble(customerDateDiff[0].toString());
+    }
+
+    public Integer checkAggregatorFund(String phoneNumber){
+        int response = 0;
+        double dateDiff = this.getRegistrationDateDiff(phoneNumber);
+        Map<String, Object> getUserSettings = (Map<String, Object>) this.getSettingValue("AGGREGATOR_COMMISSION_RECEIVER_NO_OF_DAYS");
+        double settingValue = Double.parseDouble((String) getUserSettings.get("result"));
+        if(dateDiff > settingValue){
+            response =1;
+        }
+        return response;
+    }
+
+    public void saveNetworkTxnLog(String operationId, String txnId, String channel, String userTypeId,
+                                  String customerId, String userPackageId, float amount,
+                                  double totalCommission, double totalCharge, String recipient,
+                                  String serviceAccountNumber, String provider, String requestParam, String status, String rsCplxMsg, String rsActlMsg) {
+        NetworkTxnLogEntity networkTxnLogEntity = new NetworkTxnLogEntity();
+        networkTxnLogEntity.setOperationId(operationId);
+        networkTxnLogEntity.setTxnId(txnId);
+        networkTxnLogEntity.setChannel(channel);
+        networkTxnLogEntity.setUserTypeId(userTypeId);
+        networkTxnLogEntity.setCustomerId(customerId);
+        networkTxnLogEntity.setUserPackageId(userPackageId);
+        networkTxnLogEntity.setAmount(amount);
+        networkTxnLogEntity.setCommissionCharge(String.valueOf(totalCommission));
+        networkTxnLogEntity.setAmountCharge(String.valueOf(totalCharge));
+        networkTxnLogEntity.setRecipientNo(recipient);
+        networkTxnLogEntity.setServiceAccountNo(serviceAccountNumber);
+        networkTxnLogEntity.setProvider(provider);
+        networkTxnLogEntity.setRequestParam(requestParam);
+        networkTxnLogEntity.setStatus(status);
+        networkTxnLogEntity.setResponseComplexMessage(rsCplxMsg);
+        networkTxnLogEntity.setResponseActualMessage(rsActlMsg);
+        networkTxnLogRepo.save(networkTxnLogEntity);
+    }
+
+    public Integer checkSessionToken(String customerId, String token){
+       int response = 1;
+        List<Object[]> getCustomerDateDiff = sqlQueries.getRegistrationDateDiff(phoneNumber);
+        Object[] customerDateDiff = getCustomerDateDiff.get(0);
+       return response;
     }
 }

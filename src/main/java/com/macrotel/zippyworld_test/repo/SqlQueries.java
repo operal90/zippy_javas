@@ -40,4 +40,7 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
 
     @Query(value = "SELECT DATEDIFF(NOW(), registered_at) date_diff from user_accounts where phonenumber =:phonenumber", nativeQuery = true)
     List<Object[]> getRegistrationDateDiff(@Param("phonenumber") String phonenumber);
+
+    @Query(value = "SELECT session_close_at con FROM user_sessions where customer_id =:customerId AND token =:token order by id desc limit 1", nativeQuery = true)
+    List<Object[]> getUserSession(@Param("customerId") String customerId, @Param("token") String token);
 }

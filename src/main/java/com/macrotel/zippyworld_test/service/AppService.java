@@ -651,24 +651,10 @@ public class AppService {
             String operationId = utilities.getOperationId("NU");
             List<Object[]> getNetworkOperatorServiceCode = sqlQueries.networkOperatorServiceCode(networkServiceCode,networkOperatorCode);
             if(getNetworkOperatorServiceCode.isEmpty()){
-                NetworkTxnLogEntity networkTxnLogEntity = new NetworkTxnLogEntity();
-                networkTxnLogEntity.setOperationId(operationId);
-                networkTxnLogEntity.setTxnId(txnId);
-                networkTxnLogEntity.setChannel(airtimePurchaseData.getChannel());
-                networkTxnLogEntity.setUserTypeId(userTypeId);
-                networkTxnLogEntity.setCustomerId(customerId);
-                networkTxnLogEntity.setUserPackageId(userPackageId);
-                networkTxnLogEntity.setAmount(amount);
-                networkTxnLogEntity.setCommissionCharge("");
-                networkTxnLogEntity.setAmountCharge("");
-                networkTxnLogEntity.setRecipientNo(recipient);
-                networkTxnLogEntity.setServiceAccountNo("");
-                networkTxnLogEntity.setProvider("");
-                networkTxnLogEntity.setRequestParam("");
-                networkTxnLogEntity.setStatus("3");
-                networkTxnLogEntity.setResponseComplexMessage("Invalid Network Code and Service Code");
-                networkTxnLogEntity.setResponseActualMessage("Unsuccessful");
-                networkTxnLogRepo.save(networkTxnLogEntity);
+                //Save the Network log
+                utilityService.saveNetworkTxnLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
+                        0,0,recipient,"","","",
+                        "3","Invalid Network Code and Service Code","Unsuccessful");
 
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
                 baseResponse.setMessage("Please select the Network");
@@ -682,31 +668,23 @@ public class AppService {
             String serviceAccountNumber = networkOperatorServiceCode[0].toString();
             String serviceCommissionAccountNumber = networkOperatorServiceCode[1].toString();
             String operationCode = networkOperatorServiceCode[3].toString();
+            String description = networkOperatorServiceCode[5].toString();
 
 
             //Check if users aggregator can get commission
             int cafValue = 1;
             double totalCommission = 0;
             double commissionAmount = 0;
-            int aggregatorCommissionAmount = 0;
+            double aggregatorCommissionAmount = 0;
             if(Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode, "BM")){
                 cafValue = 0;
                 //Get User Commission Value
-                List<Object[]> getCustomerCommission = sqlQueries.getCustomerCommissionDetail(serviceAccountNumber,userTypeId,userPackageId);
-                Object[] customerCommission = getCustomerCommission.get(0);
-                String cmt = customerCommission[0].toString();
-                double cmp = (customerCommission[1] != null && !customerCommission[1].toString().isEmpty()) ? Double.parseDouble(customerCommission[1].toString()) : 0.0;
-                double csc = (customerCommission[2] != null && !customerCommission[2].toString().isEmpty()) ? Double.parseDouble(customerCommission[2].toString()) : 0.0;
-                double msv = (customerCommission[3] != null && !customerCommission[3].toString().isEmpty()) ? Double.parseDouble(customerCommission[3].toString()) : 0.0;
+                Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNumber,userTypeId,userPackageId);
+                Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                double commissionMaster = servicecommissionMap.get("commissionMaster");
+                double commissionUser = servicecommissionMap.get("commissionUser");
+                totalCommission =  commissionUser + commissionMaster;
 
-                if(Objects.equals(cmt,"PT")){
-                    double userCommission = (amount * cmp) /100;
-                    double masterCommission = (msv > 0) ? (amount * msv)/100 : msv;
-                    totalCommission = userCommission + masterCommission;
-                }
-                else {
-                    totalCommission = csc + msv;
-                }
 
                 UtilityResponse getAgentCommissionStructure =utilityService.agentCommissionStructure(totalCommission,buzAggregatorCode,customerId,userTypeId,userPackageId,serviceAccountNumber);
                 if(!getAgentCommissionStructure.getStatusCode().equals(ERROR_STATUS_CODE)){
@@ -726,8 +704,29 @@ public class AppService {
             }
             else{
                 Object getPromoServiceCommission =  utilityService.getPromoServiceCommission(userTypeId,userPackageId,customerId,serviceAccountNumber,amount,parentAggregatorCode);
-                System.out.println(getPromoServiceCommission);
+                Map<String, Double> commissionMap = (Map<String, Double>) getPromoServiceCommission;
+                double commissionMaster = commissionMap.get("commissionMaster");
+                double commissionUser = commissionMap.get("commissionUser");
+                if(!Objects.equals(commissionMaster,0.0) && !Objects.equals(commissionUser,0.0)){
+                    commissionAmount = commissionUser;
+                    aggregatorCommissionAmount = commissionMaster;
+                }
+                else {
+                    Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNumber,userTypeId,userPackageId);
+                    Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                    commissionAmount = servicecommissionMap.get("commissionUser");
+                    aggregatorCommissionAmount =servicecommissionMap.get("commissionMaster");
+                }
+                totalCommission = commissionAmount + aggregatorCommissionAmount;
+                cafValue = utilityService.checkAggregatorFund(customerId);
             }
+
+            double totalCharge = utilities.formattedAmount(String.valueOf(amount-totalCommission));
+            String operationSummary = description + " of " + totalCharge;
+            //Save the Network log
+            utilityService.saveNetworkTxnLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
+                    totalCommission,totalCharge,recipient,serviceAccountNumber,provider,"","","","");
+
 
         }
         catch (Exception ex){
