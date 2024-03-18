@@ -146,6 +146,12 @@ public class UtilityService {
 
     public Object getPromoCommissionProcess(String userTypeId, String userPackageId, String customerId, String serviceAccountNo, double amount){
         HashMap<String, String> result = new HashMap<>();
+        result.put("statusCode", "1");
+        result.put("cmt", "0");
+        result.put("cmp", "0");
+        result.put("csc", "0");
+        result.put("msv", "0");
+
         List<Object[]> getPromoCommissionQuery = sqlQueries.getPromoCommissionProcess(serviceAccountNo);
         if (!getPromoCommissionQuery.isEmpty()) {
             Object[] promoCommissionQuery = getPromoCommissionQuery.get(0);
@@ -153,27 +159,42 @@ public class UtilityService {
             String type = promoCommissionQuery[3].toString();
             String typeId = promoCommissionQuery[4].toString();
             String packageId = promoCommissionQuery[5].toString();
-            String value = promoCommissionQuery[6].toString();
+            double value = Double.parseDouble(promoCommissionQuery[6].toString());
 
-            if (Objects.equals(type, "DATE_RANGE") &&
-                    ((Objects.equals(mode, "SPECIFIC") && Objects.equals(typeId, userTypeId) && Objects.equals(packageId, userPackageId))
-                            ||
-                            (Objects.equals(mode, "NON_SPECIFIC") && Objects.equals(typeId, userTypeId) && Objects.equals(packageId, userPackageId)))) {
-                if (Objects.equals(mode, "SPECIFIC") || Objects.equals(mode, "NON_SPECIFIC")) {
-                    List<Object[]> getRegistrationDateDiff = sqlQueries.getRegistrationDateDiff(customerId);
-                    Object[] registrationDateDiff = getRegistrationDateDiff.get(0);
-                    String dateDiff = registrationDateDiff[0].toString();
-                    if (Objects.equals(dateDiff, value)) {
-                        result.put("statusCode", "0");
-                        result.put("cmt", promoCommissionQuery[8].toString());
-                        result.put("cmp", promoCommissionQuery[9].toString());
-                        result.put("csc", promoCommissionQuery[10].toString());
-                        result.put("msv", promoCommissionQuery[11].toString());
+            if(Objects.equals(mode, "SPECIFIC")){
+                if(Objects.equals(type,"DATE_RANGE")){
+                    if(!Objects.equals(typeId,"") && !Objects.equals(packageId,"")){
+                        if(Objects.equals(typeId,userTypeId) && Objects.equals(packageId,userPackageId)){
+                            setResultValues(result, promoCommissionQuery);
+                        }
+                    }
+                } else if (Objects.equals(type,"CUSTOMER_AGE")) {
+                    double customerDateDiff = this.getRegistrationDateDiff(customerId);
+                    if(customerDateDiff <= value){
+                        setResultValues(result, promoCommissionQuery);
+                    }
+                }
+            } else if (Objects.equals(mode,"NON_SPECIFIC")) {
+                if(Objects.equals(type,"DATE_RANGE")){
+                    setResultValues(result, promoCommissionQuery);
+                }
+                else if (Objects.equals(type,"CUSTOMER_AGE")) {
+                    double customerDateDiff = this.getRegistrationDateDiff(customerId);
+                    if(customerDateDiff <= value){
+                        setResultValues(result, promoCommissionQuery);
                     }
                 }
             }
+
         }
         return result;
+    }
+    private void setResultValues(Map<String, String> result, Object[] promoCommissionQuery) {
+        result.put("statusCode", "0");
+        result.put("cmt", promoCommissionQuery[8].toString());
+        result.put("cmp", promoCommissionQuery[9].toString());
+        result.put("csc", promoCommissionQuery[10].toString());
+        result.put("msv", promoCommissionQuery[11].toString());
     }
     private String getParentAggregatorCodeOne(String customerId){
         List<Object[]> getParentAggregatorCode = sqlQueries.getParentAggregatorCode(customerId);
@@ -200,5 +221,11 @@ public class UtilityService {
             result.put("result", "");
         }
         return result;
+    }
+
+    private Double getRegistrationDateDiff(String phoneNumber){
+        List<Object[]> getCustomerDateDiff = sqlQueries.getRegistrationDateDiff(phoneNumber);
+        Object[] customerDateDiff = getCustomerDateDiff.get(0);
+        return  Double.parseDouble(customerDateDiff[0].toString());
     }
 }

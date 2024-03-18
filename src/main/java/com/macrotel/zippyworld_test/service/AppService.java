@@ -713,22 +713,20 @@ public class AppService {
                     Map<String, Object> result = (Map<String, Object>) getAgentCommissionStructure.getResult();
                     for (Map.Entry<String, Object> entry : result.entrySet()) {
                         Map<String, Object> agentDetail = (Map<String, Object>) entry.getValue();
-                        System.out.println(agentDetail);
-                        String agentType = (String) agentDetail.get("agent_type");
-
-//                        if (agentType.equals("BO")) {
-//                            commissionAmount = (double) agentDetail.get("commission");
-//                        } if (agentType.equals("BM")) {
-//                            commissionAmount = (double) agentDetail.get("commission");
-//                        }
+                        String agentType = (String) agentDetail.get("agentType");
+                        if (agentType.equals("BO")) {
+                            commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
+                        }else if (agentType.equals("BM")) {
+                            commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
+                        }
                     }
+                    //Ask hm to clearify commusuon amount
                 }
 
-
-                //
             }
             else{
-
+                Object getPromoServiceCommission =  utilityService.getPromoServiceCommission(userTypeId,userPackageId,customerId,serviceAccountNumber,amount,parentAggregatorCode);
+                System.out.println(getPromoServiceCommission);
             }
 
         }
