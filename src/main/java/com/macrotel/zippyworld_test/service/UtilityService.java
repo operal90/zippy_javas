@@ -10,6 +10,9 @@ import com.macrotel.zippyworld_test.repo.SqlQueries;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static com.macrotel.zippyworld_test.config.AppConstants.*;
@@ -21,8 +24,7 @@ public class UtilityService {
     SqlQueries sqlQueries;
     @Autowired
     SettingRepo settingRepo;
-    @Autowired
-    NetworkTxnLogRepo networkTxnLogRepo;
+
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
         //Get AgentCommissionStructure
@@ -267,35 +269,55 @@ public class UtilityService {
         }
         return response;
     }
-
-    public void saveNetworkTxnLog(String operationId, String txnId, String channel, String userTypeId,
-                                  String customerId, String userPackageId, float amount,
-                                  double totalCommission, double totalCharge, String recipient,
-                                  String serviceAccountNumber, String provider, String requestParam, String status, String rsCplxMsg, String rsActlMsg) {
-        NetworkTxnLogEntity networkTxnLogEntity = new NetworkTxnLogEntity();
-        networkTxnLogEntity.setOperationId(operationId);
-        networkTxnLogEntity.setTxnId(txnId);
-        networkTxnLogEntity.setChannel(channel);
-        networkTxnLogEntity.setUserTypeId(userTypeId);
-        networkTxnLogEntity.setCustomerId(customerId);
-        networkTxnLogEntity.setUserPackageId(userPackageId);
-        networkTxnLogEntity.setAmount(amount);
-        networkTxnLogEntity.setCommissionCharge(String.valueOf(totalCommission));
-        networkTxnLogEntity.setAmountCharge(String.valueOf(totalCharge));
-        networkTxnLogEntity.setRecipientNo(recipient);
-        networkTxnLogEntity.setServiceAccountNo(serviceAccountNumber);
-        networkTxnLogEntity.setProvider(provider);
-        networkTxnLogEntity.setRequestParam(requestParam);
-        networkTxnLogEntity.setStatus(status);
-        networkTxnLogEntity.setResponseComplexMessage(rsCplxMsg);
-        networkTxnLogEntity.setResponseActualMessage(rsActlMsg);
-        networkTxnLogRepo.save(networkTxnLogEntity);
-    }
-
     public Integer checkSessionToken(String customerId, String token){
        int response = 1;
-        List<Object[]> getCustomerDateDiff = sqlQueries.getRegistrationDateDiff(phoneNumber);
-        Object[] customerDateDiff = getCustomerDateDiff.get(0);
+        List<Object[]> getCustomerSession = sqlQueries.getUserSession(customerId,token);
+        if(!getCustomerSession.isEmpty()){
+            Object[] customerSession = getCustomerSession.get(0);
+            LocalDateTime sessionTime = LocalDateTime.parse(customerSession[0].toString());
+            LocalDateTime currentTime = LocalDateTime.parse(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
+
+            long years = ChronoUnit.YEARS.between(sessionTime,currentTime);
+            long months = ChronoUnit.MONTHS.between(sessionTime,currentTime);
+            long days = ChronoUnit.DAYS.between(sessionTime,currentTime);
+            long hours = ChronoUnit.HOURS.between(sessionTime,currentTime);
+            long minutes = ChronoUnit.MINUTES.between(sessionTime,currentTime);
+
+            if(years > 0 || months >0 || days >0 || hours > 0){
+                response = 1;
+            }else{
+                if(minutes <= 20){
+                    response = 0;
+                }
+            }
+        }
        return response;
     }
+
+    public Object airtimePurchase(String operationId, String customerId, String customerName, String email, String userTypeId, String userPackageId, String commissionMode,
+                                String airtimeBeneficiary, double amount, double commissionAmount, double amountCharge, String channel, String serviceAccountNumber,
+                                  String serviceCommissionAccountNumber, String networkOperatorCode, String networkServiceCode, String provider, String network,
+                                  String operationCode, String operationSummary, String value){
+        HashMap<String, String> result = new HashMap<>();
+        String providerResponse = "";
+        String details = "";
+        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+
+        return result;
+    }
+
+    public Object checkDailyTxnBalance(String customerId, double txnAmount, String serviceAccountNumber){
+        HashMap<String, String> response = new HashMap<>();
+        List<Object[]> getCustomerKycAmount = sqlQueries.getKycAmount(customerId);
+        Object[] customerKycAmount = getCustomerKycAmount.get(0);
+        String customerName = (String) customerKycAmount[0];
+        String restriction = (String) customerKycAmount[3];
+        String kycLevel = (String) customerKycAmount[2];
+        if(!Objects.equals(restriction, "YES")){
+
+        }
+        return response;
+    }
+
+    public Object dailyTxnBalanceProcess()
 }

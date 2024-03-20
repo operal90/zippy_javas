@@ -31,6 +31,7 @@ public class NetworkTxnLogEntity implements Serializable {
     private String customerId;
     private String recipientNo;
     private String timeIn;
+    private String timeOut;
 
     public NetworkTxnLogEntity() {
         this.timeIn = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));

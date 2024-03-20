@@ -43,4 +43,7 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
 
     @Query(value = "SELECT session_close_at con FROM user_sessions where customer_id =:customerId AND token =:token order by id desc limit 1", nativeQuery = true)
     List<Object[]> getUserSession(@Param("customerId") String customerId, @Param("token") String token);
+
+    @Query(value = "select concat( ua.firstname ,' ', ua.lastname) names, ks.amount, ua.kyc_level , ks.restriction from user_accounts ua ,kyc_standards ks where  ua.phonenumber =:phonenumber and ua.kyc_level = ks.level", nativeQuery = true)
+    List<Object[]> getKycAmount(@Param("phonenumber") String phonenumber);
 }

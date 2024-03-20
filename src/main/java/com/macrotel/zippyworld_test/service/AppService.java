@@ -33,6 +33,7 @@ public class AppService {
     private static final Logger LOG = Logger.getLogger(AppService.class.getName());
 
    private final UtilityService utilityService;
+   private final LoggingService loggingService;
 
     @Autowired
     UserAccountRepo userAccountRepo;
@@ -65,9 +66,11 @@ public class AppService {
     @Autowired
     SqlQueries sqlQueries;
 
-    public AppService(UtilityService utilityService) {
+    public AppService(UtilityService utilityService, LoggingService loggingService) {
         this.utilityService = utilityService;
+        this.loggingService = loggingService;
     }
+
 
 
     public BaseResponse testing(){
@@ -611,10 +614,11 @@ public class AppService {
             String customerId = airtimePurchaseData.getPhonenumber();
             String recipient = airtimePurchaseData.getBeneficiary_phonenumber();
             Float amount = utilities.formattedAmount(airtimePurchaseData.getAmount());
+            String channel = airtimePurchaseData.getChannel();
             Optional<NetworkTxnLogEntity> isTransactionExist = networkTxnLogRepo.customerRecipientLastTransaction(customerId,recipient);
             if (isTransactionExist.isPresent()){
                 NetworkTxnLogEntity networkTxnLogEntity = isTransactionExist.get();
-                //Compare the time to check if its less than 5 min
+                //Compare the time to check if it is less than 5 min
                 LocalDateTime lastTime = LocalDateTime.parse(networkTxnLogEntity.getTimeIn(), DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
                 LocalDateTime currentTime = LocalDateTime.now();
                 long minutesDifference = ChronoUnit.MINUTES.between(lastTime, currentTime);
@@ -652,7 +656,7 @@ public class AppService {
             List<Object[]> getNetworkOperatorServiceCode = sqlQueries.networkOperatorServiceCode(networkServiceCode,networkOperatorCode);
             if(getNetworkOperatorServiceCode.isEmpty()){
                 //Save the Network log
-                utilityService.saveNetworkTxnLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
+                loggingService.networkRequestLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
                         0,0,recipient,"","","",
                         "3","Invalid Network Code and Service Code","Unsuccessful");
 
@@ -723,10 +727,38 @@ public class AppService {
 
             double totalCharge = utilities.formattedAmount(String.valueOf(amount-totalCommission));
             String operationSummary = description + " of " + totalCharge;
-            //Save the Network log
-            utilityService.saveNetworkTxnLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
+            //Save the Network log and get the Id
+            Long responseId = loggingService.networkRequestLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
                     totalCommission,totalCharge,recipient,serviceAccountNumber,provider,"","","","");
 
+            if(responseId > 0){
+                //CheckSessionToken
+                int sessionToken = utilityService.checkSessionToken(customerId,airtimePurchaseData.getToken());
+                if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
+                    try{
+
+                    }
+                    catch (Exception ex){
+
+                    }
+                }
+                else{
+                    loggingService.responseTxnLogging("airtime-purchase",String.valueOf(responseId),"Session Expired, Kindly relogin","5","Unsuccessful");
+                    baseResponse.setStatus_code("5");
+                    baseResponse.setMessage("Session Expired, Kindly Relogin");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+            else{
+                String newTransactionId = txnId+"-DT-"+utilities.randomDigit(10);
+                loggingService.networkRequestLog(operationId,newTransactionId,channel,userTypeId,customerId,userPackageId,amount,commissionAmount,
+                        totalCharge,recipient,serviceAccountNumber,network,"","3",String.valueOf(responseId), "Unsuccessful");
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage(String.valueOf(responseId));
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
 
         }
         catch (Exception ex){
