@@ -46,4 +46,14 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
 
     @Query(value = "select concat( ua.firstname ,' ', ua.lastname) names, ks.amount, ua.kyc_level , ks.restriction from user_accounts ua ,kyc_standards ks where  ua.phonenumber =:phonenumber and ua.kyc_level = ks.level", nativeQuery = true)
     List<Object[]> getKycAmount(@Param("phonenumber") String phonenumber);
+    @Query(value= "SELECT IFNULL(SUM(amount_charge), 0)  amt FROM customer_wallets WHERE customer_id =:customerId AND DATE(operation_at) = DATE(NOW()) AND operation_type = 'DR'", nativeQuery = true)
+    List<Object[]> getCustomerDailyAmount(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT IFNULL(SUM(amount_charge), 0) amt FROM customer_wallets WHERE (customer_id =:customerId AND DATE(operation_at) = DATE(NOW()) AND " +
+            "     operation_type = 'CR' AND operation_event = 'RVSL' )  OR (customer_id =:customerId AND operation_type = 'DR' AND service_account_no = " +
+            "     '1000000035' AND DATE(operation_at) = DATE(NOW()))", nativeQuery = true)
+    List<Object[]> getCustomerDailyReversalAmount(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT id FROM kyc_allow_services WHERE kyc_level =:kycLevel AND service_account_number =:serviceAccountNumber ", nativeQuery = true)
+    List<Object[]> getKycAllowService(@Param("kycLevel") String kycLevel, @Param("serviceAccountNumber") String serviceAccountNumber);
 }

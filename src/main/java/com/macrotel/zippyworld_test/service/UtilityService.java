@@ -302,7 +302,18 @@ public class UtilityService {
         String providerResponse = "";
         String details = "";
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+        Object checkDailyTxnBalance = this.checkDailyTxnBalance(customerId,amountCharge,serviceAccountNumber);
+        Map<String, String> dailyTxnBalance = (Map<String, String>) checkDailyTxnBalance;
+        String dailyTxnBalanceStatusCode = dailyTxnBalance.get("statusCode");
+        String dailyTxnBalanceMessage = dailyTxnBalance.get("message");
+        if(Objects.equals(dailyTxnBalanceStatusCode, "0")){
 
+        }
+        else{
+            result.put("statusCode", "1");
+            result.put("message", dailyTxnBalanceMessage);
+            result.put("statusMessage", "Failed");
+        }
         return result;
     }
 
@@ -312,12 +323,88 @@ public class UtilityService {
         Object[] customerKycAmount = getCustomerKycAmount.get(0);
         String customerName = (String) customerKycAmount[0];
         String restriction = (String) customerKycAmount[3];
-        String kycLevel = (String) customerKycAmount[2];
-        if(!Objects.equals(restriction, "YES")){
+        int kycLevel = (customerKycAmount[2] !=null && !customerKycAmount[2].toString().isEmpty()) ? Integer.parseInt(customerKycAmount[2].toString()) : 0;
+        double kycAmount = (customerKycAmount[1] !=null && !customerKycAmount[1].toString().isEmpty()) ? Double.parseDouble(customerKycAmount[1].toString()) : 0.0;
 
+        Object dailyTxnBalanceProcess = this.dailyTxnBalanceProcess(customerName,kycLevel,kycAmount,customerId,txnAmount);
+        Map<String, String> txnBalanceProcess = (Map<String, String>) dailyTxnBalanceProcess;
+        if(!Objects.equals(restriction, "YES")){
+            response.put("statusCode", txnBalanceProcess.get("statusCode"));
+            response.put("message", txnBalanceProcess.get("message"));
+        }
+        else{
+            Object getKycAllowService = this.getKycAllowService(kycLevel,serviceAccountNumber);
+            Map<String, String> kycAllowService = (Map<String, String>) getKycAllowService;
+            String kycAllowServiceStatusCode = kycAllowService.get("statusCode");
+            if(!Objects.equals(kycAllowServiceStatusCode,"1")){
+                response.put("statusCode", txnBalanceProcess.get("statusCode"));
+                response.put("message", txnBalanceProcess.get("message"));
+            }
+            else{
+                response.put("statusCode", "1");
+                response.put("message", "Dear "+customerName+", Kindly provide your MEANS OF IDENTITY to enjoy the transaction. Thanks for using Zippyworld");
+            }
         }
         return response;
     }
 
-    public Object dailyTxnBalanceProcess()
+    public Object dailyTxnBalanceProcess(String kycCustomerName, int kycLevel, double kycAmount, String customerId, double txnAmount){
+        //Get User Daily Amount Spend
+        List<Object[]> getCustomerDailyAmount = sqlQueries.getCustomerDailyAmount(customerId);
+        Object[] customerDailyAmount = getCustomerDailyAmount.get(0);
+        double dailyAmountSpend =  (customerDailyAmount[0] !=null && !customerDailyAmount[0].toString().isEmpty()) ? Double.parseDouble(customerDailyAmount[0].toString()) : 0.0;
+
+        //Get Customer Daily reversalAmount
+        List<Object[]> getCustomerDailyReversalAmount = sqlQueries.getCustomerDailyReversalAmount(customerId);
+        Object[] customerDailyReversalAmount = getCustomerDailyReversalAmount.get(0);
+        double dailyReversalAmount =  (customerDailyReversalAmount[0] !=null && !customerDailyReversalAmount[0].toString().isEmpty()) ? Double.parseDouble(customerDailyReversalAmount[0].toString()) : 0.0;
+
+        HashMap<String, String> response = new HashMap<>();
+        if(kycLevel > 0){
+            double dailyAmount = utilityConfiguration.formattedAmount(String.valueOf(kycAmount));
+            double balance = kycAmount - (dailyAmountSpend - dailyReversalAmount);
+            if(txnAmount <= balance){
+                balance =  utilityConfiguration.formattedAmount(String.valueOf(balance));
+                response.put("statusCode", "0");
+                response.put("message", "You have N"+balance+" Available to use for today");
+            }
+            else{
+                balance = utilityConfiguration.formattedAmount(String.valueOf(balance));
+                if(kycLevel < 4){
+                    response.put("statusCode", "1");
+                    response.put("message", "Dear "+ kycCustomerName+", your spending limit for the day is N"+dailyAmount+". Kindly upgrade your KYC to the next level to adjust your daily limit, Thanks for using Zippyworld");
+                }
+                else{
+                    response.put("statusCode", "1");
+                    response.put("message", "Dear "+ kycCustomerName+", your spending limit for the day is N"+dailyAmount+". Thanks for using Zippyworld");
+                }
+            }
+        }
+        else{
+            response.put("statusCode", "1");
+            response.put("message", "Dear "+kycCustomerName+", Kindly update your BVN to enjoy the transaction. Thanks for using Zippyworld");
+        }
+        return response;
+    }
+
+    public Object getKycAllowService(int kycLevel, String serviceAccountNumber){
+        HashMap<String, String> response = new HashMap<>();
+        List<Object[]> getKycAllowService = sqlQueries.getKycAllowService(String.valueOf(kycLevel), serviceAccountNumber);
+        if(!getKycAllowService.isEmpty()){
+            Object[] kycAllowService = getKycAllowService.get(0);
+            if (kycAllowService.length > 0 && kycAllowService[0] != null) {
+                String id = kycAllowService[0].toString();
+                response.put("statusCode", "0");
+                response.put("result", id);
+            } else {
+                response.put("statusCode", "1");
+                response.put("result", "ID exists but has no associated value");
+            }
+        }
+        else{
+            response.put("statusCode", "1");
+            response.put("result", "No record found");
+        }
+        return response;
+    }
 }
