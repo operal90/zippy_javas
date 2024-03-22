@@ -16,6 +16,7 @@ public class UtilityConfiguration {
         }
         return text.substring(0,1).toUpperCase() + text.substring(1);
     }
+
     public String randomAlphanumeric(int length){
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         StringBuilder sb = new StringBuilder();
