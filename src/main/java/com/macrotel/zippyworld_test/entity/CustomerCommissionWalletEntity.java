@@ -20,6 +20,7 @@ public class CustomerCommissionWalletEntity implements Serializable {
     private String customerId;
     private Double walletBalance;
     private String operationDt;
+    private String serviceAccountNo;
 
     public CustomerCommissionWalletEntity(){
         this.operationDt = String.valueOf(LocalDate.now());

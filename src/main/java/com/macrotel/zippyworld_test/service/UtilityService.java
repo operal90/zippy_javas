@@ -350,20 +350,51 @@ public class UtilityService {
                         String reversalId = utilityConfiguration.randomDigit(10);
                         operationSummary = "Reversal of " + operationSummary;
                         loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,formattedAmount);
+                        this.reversalOperation(reversalId,customerId,userTypeId,userPackageId,amount,channel,serviceAccountNumber,operationSummary);
+                        String message ="Dear "+customerName+", your recharge of N"+formattedAmount+" is pending/successful. Kindly confirm the status from CUSTOMER SERVICE before retry. Thank you for using Zippyworld";
+                        result.put("statusCode", "0");
+                        result.put("message", message);
+                        result.put("statusMessage", "Pending");
+                        result.put("description", "Issue from "+provider);
                     }
-
+                    else{
+                        if(commissionAmount > 0){
+                            if(Objects.equals(commissionMode, "ACCUMULATE")){
+                                Object getCustomerCommissionWalletBalance = this.queryCustomerCommissionWalletBalance(customerId);
+                                Map<String, String> customerCommissionWalletBalance = (Map<String, String>) getCustomerCommissionWalletBalance;
+                                double commissionWalletBalance = Double.parseDouble(customerWalletBalance.get("amount")) + commissionAmount;
+                                loggingService.accumulateCommissionFundingLogging(operationId,customerId,serviceCommissionAccountNumber,commissionWalletBalance,commissionAmount,commissionOperationSummary);
+                            }
+                            else{
+                                buyerWalletBalance = buyerWalletBalance +commissionAmount;
+                                loggingService.instanceCommissionFundingLogging(operationId,customerId,userTypeId,userPackageId,serviceCommissionAccountNumber,commissionAmount,buyerWalletBalance,commissionOperationSummary,"Network Airtime Vending");
+                            }
+                        }
+                    }
+                    String message = "Dear "+customerName+", your recharge of N"+airtimeBeneficiary+"was successful. Thank you for using Zippyworld. REF:"+operationId;
+                    result.put("statusCode", "0");
+                    result.put("message", message);
+                    result.put("statusMessage", "Successful");
+                    result.put("description", (String) details);
+                    result.put("amount", String.valueOf(formattedAmount));
+                    result.put("reference", operationId);
+                    result.put("recipient", airtimeBeneficiary);
+                    result.put("recipientName", "NIL");
+                    //Ask Bode how to deal with messaging
 
                 }
                 else{
                     result.put("statusCode", "1");
                     result.put("message", "Insufficient Wallet Balance");
                     result.put("statusMessage", "Failed");
+                    result.put("description", "");
                 }
             }
             else {
                 result.put("statusCode", "3");
                 result.put("message", customerWalletBalance.get("message"));
                 result.put("statusMessage", "Failed");
+                result.put("description", "");
             }
         }
         else{
@@ -492,6 +523,34 @@ public class UtilityService {
         return response;
     }
 
+    public Object queryCustomerCommissionWalletBalance(String customerId){
+        HashMap<String, String> response = new HashMap<>();
+        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
+        response.put("statusCode", "1");
+        response.put("amount", "0");
+        response.put("message", "Unable to Get wallet balance");
+
+        //Get customer wallet balance
+        List<Object[]> getCustomerCommissionWalletBalance = sqlQueries.getCustomerCommissionWalletBalance(customerId);
+        if(!getCustomerCommissionWalletBalance.isEmpty()){
+            Object[] customerCommissionWalletBalance = getCustomerCommissionWalletBalance.get(0);
+            double walletBalance = Double.parseDouble((String) customerCommissionWalletBalance[0]);
+            String operationAt = (String) customerCommissionWalletBalance[1];
+            if(!Objects.equals(todayDate, operationAt)){
+                response.put("statusCode", "0");
+                response.put("amount", String.valueOf(walletBalance));
+                response.put("message", "Successful");
+            }
+            else{
+                response.put("statusCode", "2");
+                response.put("amount", String.valueOf(walletBalance));
+                response.put("message", "Concurrent Operation");
+            }
+
+        }
+        return response;
+    }
+
     public Double queryServiceWalletBalance(String serviceAccountNo){
         double amount = 0.0;
         List<Object[]> getServiceWalletBalance = sqlQueries.getServiceWalletBalance(serviceAccountNo);
@@ -527,6 +586,7 @@ public class UtilityService {
 
             result.put("statusCode", "0");
             result.put("reference", operationId);
+            result.put("message", "Reversal operation successful");
         }
         else{
             result.put("statusCode", customerWalletBalanceStatusCode);

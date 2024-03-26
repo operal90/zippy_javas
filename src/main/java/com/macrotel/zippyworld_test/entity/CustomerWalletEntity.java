@@ -5,6 +5,8 @@ import lombok.Data;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Data
 @Entity
@@ -31,6 +33,6 @@ public class CustomerWalletEntity implements Serializable {
     private String operationAt;
 
     public CustomerWalletEntity() {
-        this.operationAt =String.valueOf(LocalDate.now());
+        this.operationAt =String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd  HH:mm:ss")));
     }
 }

@@ -22,6 +22,10 @@ public class LoggingService {
     ServiceWalletRepo serviceWalletRepo;
     @Autowired
     ReversalTransactionRepo reversalTransactionRepo;
+    @Autowired
+    CustomerCommissionWalletRepo customerCommissionWalletRepo;
+    @Autowired
+    CommissionTxnLogRepo commissionTxnLogRepo;
     @Transactional
     public Long networkRequestLog(String operationId, String txnId, String channel, String userTypeId,
                                   String customerId, String userPackageId, float amount,
@@ -124,5 +128,54 @@ public class LoggingService {
         reversalTransactionEntity.setCustomerId(customerId);
         reversalTransactionEntity.setAmount(amount);
         reversalTransactionRepo.save(reversalTransactionEntity);
+    }
+
+    public void accumulateCommissionFundingLogging(String operationId, String customerId, String serviceAccountNumber, double commissionWalletBalance, double commissionAmount, String commissionOperationSummary){
+        CustomerCommissionWalletEntity customerCommissionWalletEntity  = new CustomerCommissionWalletEntity();
+        customerCommissionWalletEntity.setReferenceId(operationId);
+        customerCommissionWalletEntity.setOperationType("CR");
+        customerCommissionWalletEntity.setServiceAccountNo(serviceAccountNumber);
+        customerCommissionWalletEntity.setOperationSummary(commissionOperationSummary);
+        customerCommissionWalletEntity.setAmount(commissionAmount);
+        customerCommissionWalletEntity.setCustomerId(customerId);
+        customerCommissionWalletEntity.setWalletBalance(commissionWalletBalance);
+        customerCommissionWalletRepo.save(customerCommissionWalletEntity);
+    }
+    public void instanceCommissionFundingLogging(String operationId, String customerId, String userTypeId, String userPackageId, String serviceAccountNumber, double amount,
+                                                 double buyerWalletBalance, String operationSummary, String service){
+        String txnId = operationId;
+      operationId = operationId +"_CMS";
+      CustomerWalletEntity customerWalletEntity = new CustomerWalletEntity();
+      customerWalletEntity.setReferenceId(operationId);
+      customerWalletEntity.setOperationEvent("COMM");
+      customerWalletEntity.setOperationType("CR");
+      customerWalletEntity.setUserTypeId(userTypeId);
+      customerWalletEntity.setUserPackageId(userPackageId);
+      customerWalletEntity.setServiceAccountNo(serviceAccountNumber);
+      customerWalletEntity.setOperationSummary(operationSummary);
+      customerWalletEntity.setAmount(amount);
+      customerWalletEntity.setCommisionType("NN");
+      customerWalletEntity.setCommisionMode("INSTANCE");
+      customerWalletEntity.setCommisionCharge(0.0);
+      customerWalletEntity.setAmountCharge(amount);
+      customerWalletEntity.setCustomerId(customerId);
+      customerWalletEntity.setWalletBalance(buyerWalletBalance);
+      customerWalletEntity.setStatus("Successful");
+      customerWalletRepo.save(customerWalletEntity);
+
+      if(amount > 0){
+            CommissionTxnLogEntity commissionTxnLogEntity = new CommissionTxnLogEntity();
+            commissionTxnLogEntity.setOperationId(operationId);
+            commissionTxnLogEntity.setTxnId(txnId);
+            commissionTxnLogEntity.setServiceAmountNo(serviceAccountNumber);
+            commissionTxnLogEntity.setService(service);
+            commissionTxnLogEntity.setCommissionType("COMMISSION");
+            commissionTxnLogEntity.setCustomerId(customerId);
+            commissionTxnLogEntity.setAmount(amount);
+            commissionTxnLogEntity.setDescription(operationSummary);
+            commissionTxnLogEntity.setStatus("0");
+            commissionTxnLogRepo.save(commissionTxnLogEntity);
+      }
+
     }
 }

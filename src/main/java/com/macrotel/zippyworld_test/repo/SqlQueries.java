@@ -59,6 +59,8 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
 
     @Query(value = "SELECT wallet_balance, operation_at FROM customer_wallets WHERE customer_id =:customerId ORDER BY id DESC LIMIT 1", nativeQuery = true)
     List<Object[]> getCustomerWalletBalance(@Param("customerId") String customerId);
+    @Query(value = "SELECT wallet_balance, operation_at FROM customer_commission_wallets WHERE customer_id =:customerId ORDER BY id DESC LIMIT 1", nativeQuery = true)
+    List<Object[]> getCustomerCommissionWalletBalance(@Param("customerId") String customerId);
 
     @Query(value = "SELECT wallet_balance FROM service_wallets WHERE service_account_no =:serviceAccountNo ORDER BY operation_at DESC LIMIT 1", nativeQuery = true)
     List<Object[]> getServiceWalletBalance(@Param("serviceAccountNo") String serviceAccountNo);
