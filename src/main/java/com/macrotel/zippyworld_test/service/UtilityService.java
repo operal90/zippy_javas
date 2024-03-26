@@ -4,6 +4,7 @@ import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.entity.NetworkTxnLogEntity;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
+import com.macrotel.zippyworld_test.provider.TelecomConnect;
 import com.macrotel.zippyworld_test.repo.NetworkTxnLogRepo;
 import com.macrotel.zippyworld_test.repo.SettingRepo;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
@@ -18,8 +19,13 @@ import java.util.*;
 import static com.macrotel.zippyworld_test.config.AppConstants.*;
 @Service
 public class UtilityService {
+    private final LoggingService loggingService;
+    public UtilityService(LoggingService loggingService){
+        this.loggingService = loggingService;
+    }
     UtilityResponse utilityResponse = new UtilityResponse();
     UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
+    TelecomConnect telecomConnect = new TelecomConnect();
     @Autowired
     SqlQueries sqlQueries;
     @Autowired
@@ -297,17 +303,68 @@ public class UtilityService {
     public Object airtimePurchase(String operationId, String customerId, String customerName, String email, String userTypeId, String userPackageId, String commissionMode,
                                 String airtimeBeneficiary, double amount, double commissionAmount, double amountCharge, String channel, String serviceAccountNumber,
                                   String serviceCommissionAccountNumber, String networkOperatorCode, String networkServiceCode, String provider, String network,
-                                  String operationCode, String operationSummary, String value){
+                                  String operationCode, String value){
         HashMap<String, String> result = new HashMap<>();
-        String providerResponse = "";
-        String details = "";
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+        double formattedAmount = utilityConfiguration.formattedAmount(String.valueOf(amount));
+
+        //Check Daily Transaction Balance
         Object checkDailyTxnBalance = this.checkDailyTxnBalance(customerId,amountCharge,serviceAccountNumber);
         Map<String, String> dailyTxnBalance = (Map<String, String>) checkDailyTxnBalance;
         String dailyTxnBalanceStatusCode = dailyTxnBalance.get("statusCode");
         String dailyTxnBalanceMessage = dailyTxnBalance.get("message");
         if(Objects.equals(dailyTxnBalanceStatusCode, "0")){
+            //Get customer wallet balance
+            Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
 
+            //Get Service Wallet Balance
+            double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
+
+            if(Objects.equals(customerWalletBalanceStatusCode, "0")){
+                if(customerWalletBalanceAmount >= amountCharge){
+                     String operationSummary = customerName + " recharges " +airtimeBeneficiary+" with "+ network+" N"+formattedAmount;
+                     String commissionOperationSummary = "Commission on recharges for "+customerName+" ,"+airtimeBeneficiary + network+" of N"+formattedAmount;
+                     double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amount));
+                     double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(walletBalance+amountCharge));
+
+                     //Log Into Ledger Account(CR and DR),service wallet, customer wallet.
+                    loggingService.ledgerAccountLogging(operationId,"CR",serviceAccountNumber,operationSummary,amount,customerId,channel,todayDate);
+                    loggingService.ledgerAccountLogging(operationId,"DR",serviceAccountNumber,operationSummary,amount,customerId,channel,todayDate);
+                    loggingService.serviceWalletLogging(operationId,"CR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,
+                                        "PT",commissionAmount,amountCharge,receiverWalletBalance,todayDate);
+                    loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,
+                                                        amount,"PT",commissionMode,0,amount,customerId,buyerWalletBalance,todayDate);
+
+                    //Consult third-party telecom
+                    List<Object> airtimeVendingAPI = (List<Object>) telecomConnect.airtimeVendingRequest(network, airtimeBeneficiary, formattedAmount, operationId);
+                    Object airtimeResponse = airtimeVendingAPI.get(0);
+                    Map<String, Object> airtimeResponseMap = (Map<String, Object>) airtimeResponse;
+                    String statusCode = (String) airtimeResponseMap.get("statusCode");
+                    Object details = airtimeResponseMap.get("details");
+
+                    if(!Objects.equals(statusCode,"0")){
+                        //Reversal
+                        String reversalId = utilityConfiguration.randomDigit(10);
+                        operationSummary = "Reversal of " + operationSummary;
+                        loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,formattedAmount);
+                    }
+
+
+                }
+                else{
+                    result.put("statusCode", "1");
+                    result.put("message", "Insufficient Wallet Balance");
+                    result.put("statusMessage", "Failed");
+                }
+            }
+            else {
+                result.put("statusCode", "3");
+                result.put("message", customerWalletBalance.get("message"));
+                result.put("statusMessage", "Failed");
+            }
         }
         else{
             result.put("statusCode", "1");
@@ -347,7 +404,6 @@ public class UtilityService {
         }
         return response;
     }
-
     public Object dailyTxnBalanceProcess(String kycCustomerName, int kycLevel, double kycAmount, String customerId, double txnAmount){
         //Get User Daily Amount Spend
         List<Object[]> getCustomerDailyAmount = sqlQueries.getCustomerDailyAmount(customerId);
@@ -406,5 +462,77 @@ public class UtilityService {
             response.put("result", "No record found");
         }
         return response;
+    }
+
+    public Object queryCustomerWalletBalance(String customerId){
+        HashMap<String, String> response = new HashMap<>();
+        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
+        response.put("statusCode", "1");
+        response.put("amount", "0");
+        response.put("message", "Unable to Get wallet balance");
+
+        //Get customer wallet balance
+        List<Object[]> getCustomerWalletBalance = sqlQueries.getCustomerWalletBalance(customerId);
+        if(!getCustomerWalletBalance.isEmpty()){
+            Object[] customerWalletBalance = getCustomerWalletBalance.get(0);
+            double walletBalance = Double.parseDouble((String) customerWalletBalance[0]);
+            String operationAt = (String) customerWalletBalance[1];
+            if(!Objects.equals(todayDate, operationAt)){
+                response.put("statusCode", "0");
+                response.put("amount", String.valueOf(walletBalance));
+                response.put("message", "Successful");
+            }
+            else{
+                response.put("statusCode", "2");
+                response.put("amount", String.valueOf(walletBalance));
+                response.put("message", "Successful");
+            }
+
+        }
+        return response;
+    }
+
+    public Double queryServiceWalletBalance(String serviceAccountNo){
+        double amount = 0.0;
+        List<Object[]> getServiceWalletBalance = sqlQueries.getServiceWalletBalance(serviceAccountNo);
+        if(!getServiceWalletBalance.isEmpty()) {
+            Object[] serviceWalletBalance = getServiceWalletBalance.get(0);
+            amount = Double.parseDouble((String) serviceWalletBalance[0]);
+        }
+        return amount;
+    }
+
+    public Object reversalOperation(String operationId, String customerId, String userTypeId, String userPackageId,double amount, String channel, String serviceAccountNumber, String operationSummary){
+        HashMap<String, String> result = new HashMap<>();
+        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
+
+        Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
+        Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+        String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
+        double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+        String customerWalletBalanceMessage = customerWalletBalance.get("message");
+        if(Objects.equals(customerWalletBalanceStatusCode,"0")){
+            //Get customer serviceWalletBalance
+            double serviceWalletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
+            double newServiceWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(serviceWalletBalance -amount));
+            double newBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount + amount));
+
+            //Log Into Ledger Account(CR and DR),service wallet, customer wallet.
+            loggingService.ledgerAccountLogging(operationId,"CR",serviceAccountNumber,operationSummary,amount,customerId,channel,todayDate);
+            loggingService.ledgerAccountLogging(operationId,"DR",serviceAccountNumber,operationSummary,amount,customerId,channel,todayDate);
+            loggingService.serviceWalletLogging(operationId,"DR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,
+                    "NN",0,amount,newServiceWalletBalance,todayDate);
+            loggingService.customerWalletLogging(operationId,"RVSL","CR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,
+                    amount,"NN","",0,amount,customerId,newBalance,todayDate);
+
+            result.put("statusCode", "0");
+            result.put("reference", operationId);
+        }
+        else{
+            result.put("statusCode", customerWalletBalanceStatusCode);
+            result.put("reference", "");
+            result.put("message", customerWalletBalanceMessage);
+        }
+        return result;
     }
 }

@@ -22,9 +22,11 @@ public class CustomerWalletEntity implements Serializable {
     private Double amountCharge;
     private String commisionType;
     private Double commisionCharge;
+    private String commisionMode;
     private String customerId;
     private Double walletBalance;
     private String userTypeId;
+    private String userPackageId;
     private String status;
     private String operationAt;
 

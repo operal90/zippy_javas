@@ -71,8 +71,6 @@ public class AppService {
         this.loggingService = loggingService;
     }
 
-
-
     public BaseResponse testing(){
         baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
         baseResponse.setMessage("API is working well");
@@ -404,7 +402,7 @@ public class AppService {
             String phoneNumber = notificationData.phoneNumber;
             String emailAddress = notificationData.emailAddress;
             String username = utilities.extractUsername(emailAddress);
-            String userOtp = utilities.otpCode(7);
+            String userOtp = utilities.randomDigit(7);
             OTPEntity otpEntity = new OTPEntity();
             otpEntity.setToken1(userOtp);
             otpEntity.setToken(utilities.shaEncryption(userOtp));
@@ -416,7 +414,7 @@ public class AppService {
             String notificationMessage = "Welcome to Zippyworld! " +
                                         "Your One-Time Passcode (OTP) is: "+userOtp+"." +
                                         " Use it to complete registration securely. Reach out on 08039855986 for further enquiry. Thank you for joining us!";
-            String smsNotificationMessage = "Welcome to Zippyworld! Your One Time PIN OTP:"+ userOtp+". Use it to complete registration securely. Reach out  on 09039855986 for further enquires";
+            String smsNotificationMessage = "Welcome to Zippyworld! Your OTP:"+ userOtp+". Use it to complete registration securely.";
             String smsNotification = notification.smsNotification(phoneNumber, "Zippyworld", smsNotificationMessage);
             String emailNotification = notification.emailNotification(emailAddress,username,"Zippyworld", notificationMessage);
             String whatsAppNotification = notification.whatsappNotification(phoneNumber, "Zippyworld", notificationMessage);

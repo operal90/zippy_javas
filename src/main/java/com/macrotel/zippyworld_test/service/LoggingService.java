@@ -1,11 +1,7 @@
 package com.macrotel.zippyworld_test.service;
 
-import com.macrotel.zippyworld_test.entity.CustomerWalletEntity;
-import com.macrotel.zippyworld_test.entity.LedgerAccountEntity;
-import com.macrotel.zippyworld_test.entity.NetworkTxnLogEntity;
-import com.macrotel.zippyworld_test.repo.CustomerWalletRepo;
-import com.macrotel.zippyworld_test.repo.LedgerAccountRepo;
-import com.macrotel.zippyworld_test.repo.NetworkTxnLogRepo;
+import com.macrotel.zippyworld_test.entity.*;
+import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +18,10 @@ public class LoggingService {
     LedgerAccountRepo ledgerAccountRepo;
     @Autowired
     CustomerWalletRepo customerWalletRepo;
+    @Autowired
+    ServiceWalletRepo serviceWalletRepo;
+    @Autowired
+    ReversalTransactionRepo reversalTransactionRepo;
     @Transactional
     public Long networkRequestLog(String operationId, String txnId, String channel, String userTypeId,
                                   String customerId, String userPackageId, float amount,
@@ -95,5 +95,34 @@ public class LoggingService {
         customerWalletEntity.setWalletBalance(walletBalance);
         customerWalletEntity.setOperationAt(operationAt);
         customerWalletRepo.save(customerWalletEntity);
+    }
+
+    public void serviceWalletLogging(String referenceId, String operationType, String userTypeId, String userPackageId, String serviceAccountNo, String customerId, String operationSummary,
+                                     double amount, String commissionType, double commissionCharge, double amountCharge, double walletBalance, String operationAt){
+        ServiceWalletEntity serviceWalletEntity = new ServiceWalletEntity();
+        serviceWalletEntity.setReferenceId(referenceId);
+        serviceWalletEntity.setOperationType(operationType);
+        serviceWalletEntity.setUserTypeId(userTypeId);
+        serviceWalletEntity.setUserPackageId(userPackageId);
+        serviceWalletEntity.setServiceAccountNo(serviceAccountNo);
+        serviceWalletEntity.setCustomerId(customerId);
+        serviceWalletEntity.setOperationSummary(operationSummary);
+        serviceWalletEntity.setAmount(amount);
+        serviceWalletEntity.setCommisionType(commissionType);
+        serviceWalletEntity.setCommisionCharge(commissionCharge);
+        serviceWalletEntity.setAmountCharge(amountCharge);
+        serviceWalletEntity.setWalletBalance(walletBalance);
+        serviceWalletEntity.setOperationAt(operationAt);
+        serviceWalletRepo.save(serviceWalletEntity);
+    }
+
+    public void reversalLogging(String reversalId, String operationId, String serviceAccountNo, String customerId, double amount){
+        ReversalTransactionEntity reversalTransactionEntity = new ReversalTransactionEntity();
+        reversalTransactionEntity.setReversalId(reversalId);
+        reversalTransactionEntity.setOperationId(operationId);
+        reversalTransactionEntity.setServiceAccountNo(serviceAccountNo);
+        reversalTransactionEntity.setCustomerId(customerId);
+        reversalTransactionEntity.setAmount(amount);
+        reversalTransactionRepo.save(reversalTransactionEntity);
     }
 }
