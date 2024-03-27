@@ -1,11 +1,9 @@
 package com.macrotel.zippyworld_test.service;
 
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
-import com.macrotel.zippyworld_test.entity.NetworkTxnLogEntity;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
-import com.macrotel.zippyworld_test.repo.NetworkTxnLogRepo;
 import com.macrotel.zippyworld_test.repo.SettingRepo;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -243,7 +241,7 @@ public class UtilityService {
         Object[] customerId = getCustomerId.get(0);
         return  customerId[0].toString();
     }
-    private Object getSettingValue(String name){
+    public Object getSettingValue(String name){
         //Get Settings
         Optional<SettingEntity> getSettings = settingRepo.getSettingByName(name);
         Map<String, Object> result = new HashMap<>();
@@ -303,7 +301,7 @@ public class UtilityService {
     public Object airtimePurchase(String operationId, String customerId, String customerName, String email, String userTypeId, String userPackageId, String commissionMode,
                                 String airtimeBeneficiary, double amount, double commissionAmount, double amountCharge, String channel, String serviceAccountNumber,
                                   String serviceCommissionAccountNumber, String networkOperatorCode, String networkServiceCode, String provider, String network,
-                                  String operationCode, String value){
+                                  String operationCode, String operationSummary){
         HashMap<String, String> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
         double formattedAmount = utilityConfiguration.formattedAmount(String.valueOf(amount));
@@ -325,7 +323,7 @@ public class UtilityService {
 
             if(Objects.equals(customerWalletBalanceStatusCode, "0")){
                 if(customerWalletBalanceAmount >= amountCharge){
-                     String operationSummary = customerName + " recharges " +airtimeBeneficiary+" with "+ network+" N"+formattedAmount;
+                      operationSummary = customerName + " recharges " +airtimeBeneficiary+" with "+ network+" N"+formattedAmount;
                      String commissionOperationSummary = "Commission on recharges for "+customerName+" ,"+airtimeBeneficiary + network+" of N"+formattedAmount;
                      double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amount));
                      double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(walletBalance+amountCharge));
@@ -561,7 +559,7 @@ public class UtilityService {
         return amount;
     }
 
-    public Object reversalOperation(String operationId, String customerId, String userTypeId, String userPackageId,double amount, String channel, String serviceAccountNumber, String operationSummary){
+    public void reversalOperation(String operationId, String customerId, String userTypeId, String userPackageId, double amount, String channel, String serviceAccountNumber, String operationSummary){
         HashMap<String, String> result = new HashMap<>();
         String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
 
@@ -593,6 +591,9 @@ public class UtilityService {
             result.put("reference", "");
             result.put("message", customerWalletBalanceMessage);
         }
-        return result;
+    }
+
+    public void aggregatorFunding(String operationId, String creditorId, String aggregatorCode, double amount, String serviceAccountNumber, String operationSummary){
+
     }
 }

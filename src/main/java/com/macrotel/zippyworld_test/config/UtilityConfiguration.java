@@ -149,4 +149,10 @@ public class UtilityConfiguration {
         DecimalFormat decimalFormat = new DecimalFormat("#.#####");
         return Float.parseFloat(decimalFormat.format(removeCommaAmount));
     }
+
+    public Float twoDecimalFormattedAmount(String amount){
+        Float removeCommaAmount = Float.parseFloat(this.removeComma(amount));
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        return Float.parseFloat(decimalFormat.format(removeCommaAmount));
+    }
 }

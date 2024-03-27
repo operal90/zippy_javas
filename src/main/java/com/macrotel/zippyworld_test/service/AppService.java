@@ -700,7 +700,7 @@ public class AppService {
                             commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
                         }
                     }
-                    //Ask hm to clearify commusuon amount
+                    //Ask hm to clearify commission amount
                 }
 
             }
@@ -734,10 +734,38 @@ public class AppService {
                 int sessionToken = utilityService.checkSessionToken(customerId,airtimePurchaseData.getToken());
                 if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
                     try{
+                        //Connect to the airtimePurchase utility
+                        Object airtimePurchaseUtility = utilityService.airtimePurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,recipient,amount,
+                                commissionAmount,totalCharge,channel,serviceAccountNumber,serviceCommissionAccountNumber,networkOperatorCode,networkServiceCode,provider,network,operationCode,operationSummary);
+                        Map<String, String> getAirtimePurchaseResult = (Map<String, String>) airtimePurchaseUtility;
+                        String airtimePurchaseStatusCode = getAirtimePurchaseResult.get("statusCode");
+                        String airtimePurchaseStatusMessage = getAirtimePurchaseResult.get("statusMessage");
+                        //Logging the transaction
+                        loggingService.responseTxnLogging("AIRTIME-PURCHASE",String.valueOf(responseId),"",airtimePurchaseStatusCode,airtimePurchaseStatusMessage);
+                        //Update Transaction
+                        sqlQueries.updateTransactionStatus(customerId,operationId,airtimePurchaseStatusMessage);
+
+                        if(!Objects.equals(airtimePurchaseStatusCode,"1") && !Objects.equals(cafValue,"1")){
+                            Object getSettingValue = utilityService.getSettingValue("DEFAULT_AGGREGATOR_CODE");
+                            Map<String, String> settingValueMap = (Map<String, String>) getSettingValue;
+                            String settingValueResult = (String) settingValueMap.get("result");
+                            if((aggregatorCommissionAmount > 0) && (!Objects.equals(parentAggregatorCode,settingValueResult))){
+
+                            } else if (Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode,"BM")){
+
+                            }
+                        }
+                        baseResponse.setStatus_code(airtimePurchaseStatusCode);
+                        baseResponse.setMessage(airtimePurchaseStatusMessage);
+                        baseResponse.setResult(getAirtimePurchaseResult);
 
                     }
                     catch (Exception ex){
-
+                        //Update Transaction
+                        float newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
+                        sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
+                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                        baseResponse.setMessage("Your airtime recharge of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");
                     }
                 }
                 else{

@@ -64,4 +64,7 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
 
     @Query(value = "SELECT wallet_balance FROM service_wallets WHERE service_account_no =:serviceAccountNo ORDER BY operation_at DESC LIMIT 1", nativeQuery = true)
     List<Object[]> getServiceWalletBalance(@Param("serviceAccountNo") String serviceAccountNo);
+
+    @Query(value = "UPDATE customer_wallets SET status =:status WHERE customer_id =:customerId AND reference_id LIKE :referenceId%", nativeQuery = true)
+    List<Object> updateTransactionStatus(@Param("customerId") String customerId, @Param("referenceId") String referenceId, @Param("status") String status);
 }
