@@ -317,11 +317,11 @@ public class UtilityService {
             Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
             String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
             double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
-            System.out.println(customerWalletBalanceAmount);
             //Get Service Wallet Balance
             double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
 
             if(Objects.equals(customerWalletBalanceStatusCode, "0")){
+
                 if(customerWalletBalanceAmount >= amountCharge){
                       operationSummary = customerName + " recharges " +airtimeBeneficiary+" with "+ network+" N"+formattedAmount;
                      String commissionOperationSummary = "Commission on recharges for "+customerName+" ,"+airtimeBeneficiary + network+" of N"+formattedAmount;
@@ -400,6 +400,7 @@ public class UtilityService {
             result.put("message", dailyTxnBalanceMessage);
             result.put("statusMessage", "Failed");
         }
+
         return result;
     }
 
@@ -517,7 +518,6 @@ public class UtilityService {
                 response.put("amount", String.valueOf(walletBalance));
                 response.put("message", "Successful");
             }
-
         }
         return response;
     }

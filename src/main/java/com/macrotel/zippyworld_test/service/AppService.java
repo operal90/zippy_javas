@@ -619,8 +619,9 @@ public class AppService {
                 //Compare the time to check if it is less than 5 min
                 LocalDateTime lastTime = LocalDateTime.parse(networkTxnLogEntity.getTimeIn(), DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
                 LocalDateTime currentTime = LocalDateTime.now();
+
                 long minutesDifference = ChronoUnit.MINUTES.between(lastTime, currentTime);
-                if (minutesDifference > 5) {
+                if (minutesDifference < 5) {
                     baseResponse.setStatus_code(ERROR_STATUS_CODE);
                     baseResponse.setMessage("Please wait for 3 minutes before you can recharge to "+recipient);
                     baseResponse.setResult(EMPTY_RESULT);
@@ -649,7 +650,8 @@ public class AppService {
             //Get Network Operator Service Code
             String networkServiceCode = airtimePurchaseData.getService_code();
             String networkOperatorCode = airtimePurchaseData.getNetwork_code();
-            String txnId = customerId+"-"+airtimePurchaseData.getTransaction_id();
+//            String txnId = customerId+"-"+airtimePurchaseData.getTransaction_id();
+            String txnId = customerId+"-"+utilities.randomDigit(9);
             String operationId = utilities.getOperationId("NU");
             List<Object[]> getNetworkOperatorServiceCode = sqlQueries.networkOperatorServiceCode(networkServiceCode,networkOperatorCode);
             if(getNetworkOperatorServiceCode.isEmpty()){
@@ -728,7 +730,6 @@ public class AppService {
             //Save the Network log and get the Id
             Long responseId = loggingService.networkRequestLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
                     totalCommission,totalCharge,recipient,serviceAccountNumber,provider,"","","","");
-
             if(responseId > 0){
                 //CheckSessionToken
                 int sessionToken = utilityService.checkSessionToken(customerId,airtimePurchaseData.getToken());
@@ -737,11 +738,13 @@ public class AppService {
                         //Connect to the airtimePurchase utility
                         Object airtimePurchaseUtility = utilityService.airtimePurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,recipient,amount,
                                 commissionAmount,totalCharge,channel,serviceAccountNumber,serviceCommissionAccountNumber,networkOperatorCode,networkServiceCode,provider,network,operationCode,operationSummary);
+
                         Map<String, String> getAirtimePurchaseResult = (Map<String, String>) airtimePurchaseUtility;
                         String airtimePurchaseStatusCode = getAirtimePurchaseResult.get("statusCode");
                         String airtimePurchaseStatusMessage = getAirtimePurchaseResult.get("statusMessage");
+                        String airtimePurchaseMessage = getAirtimePurchaseResult.get("message");
                         //Logging the transaction
-                        loggingService.responseTxnLogging("AIRTIME-PURCHASE",String.valueOf(responseId),"",airtimePurchaseStatusCode,airtimePurchaseStatusMessage);
+                        loggingService.responseTxnLogging("AIRTIME-PURCHASE",String.valueOf(responseId),airtimePurchaseMessage,airtimePurchaseStatusCode,airtimePurchaseStatusMessage);
                         //Update Transaction
                         sqlQueries.updateTransactionStatus(customerId,operationId,airtimePurchaseStatusMessage);
 
@@ -756,7 +759,7 @@ public class AppService {
                             }
                         }
                         baseResponse.setStatus_code(airtimePurchaseStatusCode);
-                        baseResponse.setMessage(airtimePurchaseStatusMessage);
+                        baseResponse.setMessage(airtimePurchaseMessage);
                         baseResponse.setResult(getAirtimePurchaseResult);
 
                     }

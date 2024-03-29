@@ -2,12 +2,12 @@ package com.macrotel.zippyworld_test.repo;
 
 import com.macrotel.zippyworld_test.entity.OTPEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT nos.service_account_no, nos.service_commission_account_no, nps.network, nps.code, nps.provider ,nos.description " +
@@ -64,7 +64,8 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
 
     @Query(value = "SELECT wallet_balance FROM service_wallets WHERE service_account_no =:serviceAccountNo ORDER BY operation_at DESC LIMIT 1", nativeQuery = true)
     List<Object[]> getServiceWalletBalance(@Param("serviceAccountNo") String serviceAccountNo);
-
-    @Query(value = "UPDATE customer_wallets SET status =:status WHERE customer_id =:customerId AND reference_id LIKE :referenceId%", nativeQuery = true)
-    List<Object> updateTransactionStatus(@Param("customerId") String customerId, @Param("referenceId") String referenceId, @Param("status") String status);
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE customer_wallets SET status =:status WHERE customer_id =:customerId AND reference_id LIKE CONCAT(:referenceId, '%')", nativeQuery = true)
+    void updateTransactionStatus(@Param("customerId") String customerId, @Param("referenceId") String referenceId, @Param("status") String status);
 }

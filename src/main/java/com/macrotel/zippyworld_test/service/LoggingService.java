@@ -54,7 +54,7 @@ public class LoggingService {
     }
 
     public void responseTxnLogging(String operation, String id, String responseMessage, String status, String actualMessage){
-        if(Objects.equals(operation,"airtime-purchase") || Objects.equals(operation,"data-purchase")){
+        if(Objects.equals(operation,"AIRTIME-PURCHASE") || Objects.equals(operation,"DATA-PURCHASE")){
             Optional<NetworkTxnLogEntity> getNetworkLog = networkTxnLogRepo.findById(Long.parseLong(id));
             NetworkTxnLogEntity networkTxnLog = getNetworkLog.get();
             networkTxnLog.setResponseComplexMessage(responseMessage);
