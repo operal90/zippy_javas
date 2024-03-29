@@ -278,8 +278,8 @@ public class UtilityService {
         List<Object[]> getCustomerSession = sqlQueries.getUserSession(customerId,token);
         if(!getCustomerSession.isEmpty()){
             Object[] customerSession = getCustomerSession.get(0);
-            LocalDateTime sessionTime = LocalDateTime.parse(customerSession[0].toString());
-            LocalDateTime currentTime = LocalDateTime.parse(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
+            LocalDateTime sessionTime = LocalDateTime.parse(customerSession[0].toString(), DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.S"));
+            LocalDateTime currentTime = LocalDateTime.now();
 
             long years = ChronoUnit.YEARS.between(sessionTime,currentTime);
             long months = ChronoUnit.MONTHS.between(sessionTime,currentTime);
@@ -317,7 +317,7 @@ public class UtilityService {
             Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
             String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
             double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
-
+            System.out.println(customerWalletBalanceAmount);
             //Get Service Wallet Balance
             double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
 
@@ -504,8 +504,9 @@ public class UtilityService {
         List<Object[]> getCustomerWalletBalance = sqlQueries.getCustomerWalletBalance(customerId);
         if(!getCustomerWalletBalance.isEmpty()){
             Object[] customerWalletBalance = getCustomerWalletBalance.get(0);
-            double walletBalance = Double.parseDouble((String) customerWalletBalance[0]);
-            String operationAt = (String) customerWalletBalance[1];
+            double walletBalance = Double.parseDouble(customerWalletBalance[0].toString());
+            String operationAt = customerWalletBalance[1].toString();
+
             if(!Objects.equals(todayDate, operationAt)){
                 response.put("statusCode", "0");
                 response.put("amount", String.valueOf(walletBalance));
