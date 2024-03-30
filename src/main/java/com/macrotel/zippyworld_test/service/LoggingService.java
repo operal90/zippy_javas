@@ -1,5 +1,6 @@
 package com.macrotel.zippyworld_test.service;
 
+import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 @Service
 public class LoggingService {
+    UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
     @Autowired
     NetworkTxnLogRepo networkTxnLogRepo;
     @Autowired
@@ -111,10 +113,10 @@ public class LoggingService {
         serviceWalletEntity.setServiceAccountNo(serviceAccountNo);
         serviceWalletEntity.setCustomerId(customerId);
         serviceWalletEntity.setOperationSummary(operationSummary);
-        serviceWalletEntity.setAmount(amount);
+        serviceWalletEntity.setAmount(utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amount)));
         serviceWalletEntity.setCommisionType(commissionType);
         serviceWalletEntity.setCommisionCharge(commissionCharge);
-        serviceWalletEntity.setAmountCharge(amountCharge);
+        serviceWalletEntity.setAmountCharge(utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amountCharge)));
         serviceWalletEntity.setWalletBalance(walletBalance);
         serviceWalletEntity.setOperationAt(operationAt);
         serviceWalletRepo.save(serviceWalletEntity);

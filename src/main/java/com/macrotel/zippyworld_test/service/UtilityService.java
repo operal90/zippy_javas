@@ -302,7 +302,7 @@ public class UtilityService {
                                 String airtimeBeneficiary, double amount, double commissionAmount, double amountCharge, String channel, String serviceAccountNumber,
                                   String serviceCommissionAccountNumber, String networkOperatorCode, String networkServiceCode, String provider, String network,
                                   String operationCode, String operationSummary){
-        HashMap<String, String> result = new HashMap<>();
+        HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
         double formattedAmount = utilityConfiguration.formattedAmount(String.valueOf(amount));
 
@@ -343,7 +343,7 @@ public class UtilityService {
                     String statusCode = (String) airtimeResponseMap.get("statusCode");
                     Object details = airtimeResponseMap.get("details");
 
-                    if(!Objects.equals(statusCode,"0")){
+                    if(!Objects.equals(statusCode, "0")){
                         //Reversal
                         String reversalId = utilityConfiguration.randomDigit(10);
                         operationSummary = "Reversal of " + operationSummary;
@@ -355,31 +355,31 @@ public class UtilityService {
                         result.put("statusMessage", "Pending");
                         result.put("description", "Issue from "+provider);
                     }
-                    else{
-                        if(commissionAmount > 0){
-                            if(Objects.equals(commissionMode, "ACCUMULATE")){
+                    else {
+                        if (commissionAmount > 0) {
+                            if (Objects.equals(commissionMode, "ACCUMULATE")) {
                                 Object getCustomerCommissionWalletBalance = this.queryCustomerCommissionWalletBalance(customerId);
                                 Map<String, String> customerCommissionWalletBalance = (Map<String, String>) getCustomerCommissionWalletBalance;
                                 double commissionWalletBalance = Double.parseDouble(customerWalletBalance.get("amount")) + commissionAmount;
-                                loggingService.accumulateCommissionFundingLogging(operationId,customerId,serviceCommissionAccountNumber,commissionWalletBalance,commissionAmount,commissionOperationSummary);
-                            }
-                            else{
-                                buyerWalletBalance = buyerWalletBalance +commissionAmount;
-                                loggingService.instanceCommissionFundingLogging(operationId,customerId,userTypeId,userPackageId,serviceCommissionAccountNumber,commissionAmount,buyerWalletBalance,commissionOperationSummary,"Network Airtime Vending");
+                                loggingService.accumulateCommissionFundingLogging(operationId, customerId, serviceCommissionAccountNumber, commissionWalletBalance, commissionAmount, commissionOperationSummary);
+                            } else {
+                                buyerWalletBalance = buyerWalletBalance + commissionAmount;
+                                loggingService.instanceCommissionFundingLogging(operationId, customerId, userTypeId, userPackageId, serviceCommissionAccountNumber, commissionAmount, buyerWalletBalance, commissionOperationSummary, "Network Airtime Vending");
                             }
                         }
+                        Map<String, String> detailsMap = (Map<String, String>)details;
+                        String message = "Dear " + customerName + ", your recharge of N" +amount+" for "+ airtimeBeneficiary + " was successful. Thank you for using Zippyworld. REF:" + operationId;
+                        result.put("statusCode", "0");
+                        result.put("message", message);
+                        result.put("statusMessage", "Successful");
+                        result.put("amount", "N"+String.valueOf(formattedAmount));
+                        result.put("reference", operationId);
+                        result.put("recipient", airtimeBeneficiary);
+                        result.put("recipientName", "NIL");
+                        result.put("network", detailsMap.get("network"));
+                        result.put("referenceNumber", detailsMap.get("reference_number"));
+                        //Ask Bode how to deal with messaging
                     }
-                    String message = "Dear "+customerName+", your recharge of N"+airtimeBeneficiary+"was successful. Thank you for using Zippyworld. REF:"+operationId;
-                    result.put("statusCode", "0");
-                    result.put("message", message);
-                    result.put("statusMessage", "Successful");
-                    result.put("description", (String) details);
-                    result.put("amount", String.valueOf(formattedAmount));
-                    result.put("reference", operationId);
-                    result.put("recipient", airtimeBeneficiary);
-                    result.put("recipientName", "NIL");
-                    //Ask Bode how to deal with messaging
-
                 }
                 else{
                     result.put("statusCode", "1");
@@ -400,7 +400,6 @@ public class UtilityService {
             result.put("message", dailyTxnBalanceMessage);
             result.put("statusMessage", "Failed");
         }
-
         return result;
     }
 

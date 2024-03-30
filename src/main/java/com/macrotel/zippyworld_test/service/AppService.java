@@ -731,7 +731,8 @@ public class AppService {
             Long responseId = loggingService.networkRequestLog(operationId,txnId,airtimePurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
                     totalCommission,totalCharge,recipient,serviceAccountNumber,provider,"","","","");
             if(responseId > 0){
-                //CheckSessionToken
+                //CheckSessionToken\
+                
                 int sessionToken = utilityService.checkSessionToken(customerId,airtimePurchaseData.getToken());
                 if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
                     try{
