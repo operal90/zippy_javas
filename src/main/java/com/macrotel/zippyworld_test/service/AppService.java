@@ -608,8 +608,18 @@ public class AppService {
     //Utilities
     public BaseResponse airtimePurchase(AirtimePurchaseData airtimePurchaseData){
         try{
-            //Check if user has done the same transaction before in the space of 5 minutes
+            //Confirm Security answer
+            String securityAnswer = utilities.shaEncryption(airtimePurchaseData.getSecurity_answer());
             String customerId = airtimePurchaseData.getPhonenumber();
+            boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
+            if(!confirmSecurityAnswer){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Incorrect Security Answer");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user has done the same transaction before in the space of 5 minutes
+
             String recipient = airtimePurchaseData.getBeneficiary_phonenumber();
             Float amount = utilities.formattedAmount(airtimePurchaseData.getAmount());
             String channel = airtimePurchaseData.getChannel();

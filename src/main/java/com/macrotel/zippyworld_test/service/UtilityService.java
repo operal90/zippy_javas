@@ -2,10 +2,12 @@ package com.macrotel.zippyworld_test.service;
 
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
+import com.macrotel.zippyworld_test.entity.UserAccountEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
 import com.macrotel.zippyworld_test.repo.SettingRepo;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
+import com.macrotel.zippyworld_test.repo.UserAccountRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,8 @@ public class UtilityService {
     SqlQueries sqlQueries;
     @Autowired
     SettingRepo settingRepo;
+    @Autowired
+    UserAccountRepo userAccountRepo;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -595,5 +599,13 @@ public class UtilityService {
 
     public void aggregatorFunding(String operationId, String creditorId, String aggregatorCode, double amount, String serviceAccountNumber, String operationSummary){
 
+    }
+    public Boolean confirmSecurityAnswer(String customerId, String answer){
+        boolean response = false;
+        Optional<UserAccountEntity> confirmSecurityAnswer = userAccountRepo.confirmSecurityAnswer(customerId,answer);
+        if(confirmSecurityAnswer.isPresent()){
+            response = true;
+        }
+        return response;
     }
 }
