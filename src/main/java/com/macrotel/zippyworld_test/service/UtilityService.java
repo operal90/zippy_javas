@@ -343,7 +343,7 @@ public class UtilityService {
                     loggingService.serviceWalletLogging(operationId,"CR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,
                                         "PT",commissionAmount,amountCharge,receiverWalletBalance,todayDate);
                     loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,
-                                                        amount,"PT",commissionMode,0,amount,customerId,buyerWalletBalance,todayDate);
+                                                        amount,"PT",commissionMode,0,amount,customerId,buyerWalletBalance,"",todayDate);
 
                     //Consult third-party telecom
                     List<Object> airtimeVendingAPI = (List<Object>) telecomConnect.airtimeVendingRequest(network, airtimeBeneficiary, formattedAmount, operationId);
@@ -387,7 +387,7 @@ public class UtilityService {
                         result.put("recipientName", "NIL");
                         result.put("network", detailsMap.get("network"));
                         result.put("referenceNumber", detailsMap.get("reference_number"));
-                        //Ask Bode how to deal with messaging
+                        //Send Notification to user
                         this.notificationMessage(customerId,"AIRTIME-RECHARGE", amount, operationId);
                     }
                 }
@@ -590,7 +590,7 @@ public class UtilityService {
             loggingService.serviceWalletLogging(operationId,"DR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,
                     "NN",0,amount,newServiceWalletBalance,todayDate);
             loggingService.customerWalletLogging(operationId,"RVSL","CR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,
-                    amount,"NN","",0,amount,customerId,newBalance,todayDate);
+                    amount,"NN","",0,amount,customerId,newBalance,"",todayDate);
 
             result.put("statusCode", "0");
             result.put("reference", operationId);
@@ -621,7 +621,7 @@ public class UtilityService {
         String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         String message = "";
         if(operation.equals("AIRTIME-RECHARGE")){
-            message = "Dear Customer Airtime/Data Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
+            message = "Dear Customer Airtime Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
         }
         //Get notification customer subscribe for;
         Optional<MessageServiceEntity> getUserNotificationSubscribe = messageServiceRepo.findByCustomerId(customerId);
@@ -651,7 +651,7 @@ public class UtilityService {
                         customerWalletBalanceAmount -=4;
                         //Log the Transaction
                         loggingService.customerWalletLogging(operationId,"MAIN","DR","","","","SMS Notification Charges",
-                                4,"","",0,4,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),todayDate);
+                                4,"","",0,4,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),"Successful",todayDate);
                     }
                 }
             }
@@ -662,7 +662,7 @@ public class UtilityService {
                     if(whatsappResponse == 0){
                         customerWalletBalanceAmount -=5;
                         loggingService.customerWalletLogging(operationId,"MAIN","DR","","","","WhatsApp Notification Charges",
-                                5,"","",0,5,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),todayDate);
+                                5,"","",0,5,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),"Successful", todayDate);
                     }
 
                 }

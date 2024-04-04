@@ -55,12 +55,7 @@ public class AppService {
     OTPRepo otpRepo;
     @Autowired
     CustomerIdentityRecordRepo customerIdentityRecordRepo;
-    @Autowired
-    BankTransferTxnRepo bankTransferTxnRepo;
-    @Autowired
-    CableTvTxnLogRepo cableTvTxnLogRepo;
-    @Autowired
-    ElectricityTxnLogRepo electricityTxnLogRepo;
+
     @Autowired
     NetworkTxnLogRepo networkTxnLogRepo;
     @Autowired
@@ -769,6 +764,7 @@ public class AppService {
 
                             }
                         }
+                        //Send Notification to user
                         baseResponse.setStatus_code(airtimePurchaseStatusCode);
                         baseResponse.setMessage(airtimePurchaseMessage);
                         baseResponse.setResult(getAirtimePurchaseResult);

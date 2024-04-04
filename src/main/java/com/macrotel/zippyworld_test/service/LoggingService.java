@@ -83,7 +83,7 @@ public class LoggingService {
 
     public void customerWalletLogging(String referenceId, String operationEvent, String operationType, String userTypeId, String userPackageId, String serviceAccountNo,
                                       String operationSummary, double amount, String commissionType, String commissionMode, double commissionCharge, double amountCharge,
-                                      String customerId, double walletBalance, String operationAt){
+                                      String customerId, double walletBalance, String status, String operationAt){
         CustomerWalletEntity customerWalletEntity = new CustomerWalletEntity();
         customerWalletEntity.setReferenceId(referenceId);
         customerWalletEntity.setOperationEvent(operationEvent);
