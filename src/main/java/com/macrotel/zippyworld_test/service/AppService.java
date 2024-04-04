@@ -415,9 +415,9 @@ public class AppService {
                                         "Your One-Time Passcode (OTP) is: "+userOtp+"." +
                                         " Use it to complete registration securely. Reach out on 08039855986 for further enquiry. Thank you for joining us!";
             String smsNotificationMessage = "Welcome to Zippyworld! Your OTP:"+ userOtp+". Use it to complete registration securely.";
-            String smsNotification = notification.smsNotification(phoneNumber, "Zippyworld", smsNotificationMessage);
-            String emailNotification = notification.emailNotification(emailAddress,username,"Zippyworld", notificationMessage);
-            String whatsAppNotification = notification.whatsappNotification(phoneNumber, "Zippyworld", notificationMessage);
+            notification.smsNotification(phoneNumber, "Zippyworld", smsNotificationMessage);
+            notification.emailNotification(emailAddress,username,"Zippyworld", notificationMessage);
+            notification.whatsappNotification(phoneNumber, "Zippyworld", notificationMessage);
             HashMap<String,String> result = new HashMap<>();
             result.put("otpCode", userOtp);
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
@@ -611,6 +611,9 @@ public class AppService {
             //Confirm Security answer
             String securityAnswer = utilities.shaEncryption(airtimePurchaseData.getSecurity_answer());
             String customerId = airtimePurchaseData.getPhonenumber();
+            String recipient = airtimePurchaseData.getBeneficiary_phonenumber();
+            double amount = utilities.formattedAmount(airtimePurchaseData.getAmount());
+            String channel = airtimePurchaseData.getChannel();
             boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
             if(!confirmSecurityAnswer){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
@@ -618,11 +621,8 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-            //Check if user has done the same transaction before in the space of 5 minutes
 
-            String recipient = airtimePurchaseData.getBeneficiary_phonenumber();
-            Float amount = utilities.formattedAmount(airtimePurchaseData.getAmount());
-            String channel = airtimePurchaseData.getChannel();
+            //Check if user has done the same transaction before in the space of 5 minutes
             Optional<NetworkTxnLogEntity> isTransactionExist = networkTxnLogRepo.customerRecipientLastTransaction(customerId,recipient);
             if (isTransactionExist.isPresent()){
                 NetworkTxnLogEntity networkTxnLogEntity = isTransactionExist.get();
@@ -631,7 +631,7 @@ public class AppService {
                 LocalDateTime currentTime = LocalDateTime.now();
 
                 long minutesDifference = ChronoUnit.MINUTES.between(lastTime, currentTime);
-                if (minutesDifference < 5) {
+                if (minutesDifference < 3) {
                     baseResponse.setStatus_code(ERROR_STATUS_CODE);
                     baseResponse.setMessage("Please wait for 3 minutes before you can recharge to "+recipient);
                     baseResponse.setResult(EMPTY_RESULT);
@@ -776,7 +776,7 @@ public class AppService {
                     }
                     catch (Exception ex){
                         //Update Transaction
-                        float newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
+                        double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
                         sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
                         baseResponse.setStatus_code(ERROR_STATUS_CODE);
                         baseResponse.setMessage("Your airtime recharge of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");

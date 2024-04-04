@@ -19,7 +19,7 @@ public class NetworkTxnLogEntity implements Serializable {
     private String channel;
     private String userTypeId;
     private String userPackageId;
-    private Float amount;
+    private double amount;
     private String commissionCharge;
     private String amountCharge;
     private String serviceAccountNo;

@@ -1,10 +1,13 @@
 package com.macrotel.zippyworld_test.service;
 
+import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
+import com.macrotel.zippyworld_test.entity.MessageServiceEntity;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
 import com.macrotel.zippyworld_test.entity.UserAccountEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
+import com.macrotel.zippyworld_test.repo.MessageServiceRepo;
 import com.macrotel.zippyworld_test.repo.SettingRepo;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import com.macrotel.zippyworld_test.repo.UserAccountRepo;
@@ -26,12 +29,15 @@ public class UtilityService {
     UtilityResponse utilityResponse = new UtilityResponse();
     UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
     TelecomConnect telecomConnect = new TelecomConnect();
+    Notification notification = new Notification();
     @Autowired
     SqlQueries sqlQueries;
     @Autowired
     SettingRepo settingRepo;
     @Autowired
     UserAccountRepo userAccountRepo;
+    @Autowired
+    MessageServiceRepo messageServiceRepo;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -60,8 +66,8 @@ public class UtilityService {
              if(Objects.equals(buzCharacter,"BM")){
                  String zmCustomerId = this.getCustomerIdByCode(parentAggregatorCode);
                  double bmCommissionPercent  = businessOwner + businessManager;
-                 float bmCommission = utilityConfiguration.formattedAmount(String.valueOf(bmCommissionPercent/100 * amount));
-                 float zmCommission = utilityConfiguration.formattedAmount(String.valueOf(zonalManager /100 * amount));
+                 double bmCommission = utilityConfiguration.formattedAmount(String.valueOf(bmCommissionPercent/100 * amount));
+                 double zmCommission = utilityConfiguration.formattedAmount(String.valueOf(zonalManager /100 * amount));
 
                  Map<String, String> bo = new HashMap<>();
                  bo.put("agentType", "BO");
@@ -90,9 +96,9 @@ public class UtilityService {
                  String bmCustomerId =this.getCustomerIdByCode(this.getParentAggregatorCodeOne(customerId));
                  String zmCustomerId = this.getCustomerIdByCode(this.getParentAggregatorCodeOne(bmCustomerId));
 
-                 float boCommission = utilityConfiguration.formattedAmount(String.valueOf(businessOwner/100 * amount));
-                 float bmCommission = utilityConfiguration.formattedAmount(String.valueOf(businessManager/100 *amount));
-                 float zmCommission = utilityConfiguration.formattedAmount(String.valueOf(zonalManager /100 *amount));
+                 double boCommission = utilityConfiguration.formattedAmount(String.valueOf(businessOwner/100 * amount));
+                 double bmCommission = utilityConfiguration.formattedAmount(String.valueOf(businessManager/100 *amount));
+                 double zmCommission = utilityConfiguration.formattedAmount(String.valueOf(zonalManager /100 *amount));
                  Map<String, String> bo = new HashMap<>();
                  bo.put("agentType", "BO");
                  bo.put("customerId", customerId);
@@ -325,10 +331,9 @@ public class UtilityService {
             double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
 
             if(Objects.equals(customerWalletBalanceStatusCode, "0")){
-
                 if(customerWalletBalanceAmount >= amountCharge){
                       operationSummary = customerName + " recharges " +airtimeBeneficiary+" with "+ network+" N"+formattedAmount;
-                     String commissionOperationSummary = "Commission on recharges for "+customerName+" ,"+airtimeBeneficiary + network+" of N"+formattedAmount;
+                     String commissionOperationSummary = "Commission on recharges for "+customerName+" ,"+airtimeBeneficiary +" "+ network+" of N"+formattedAmount;
                      double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amount));
                      double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(walletBalance+amountCharge));
 
@@ -383,6 +388,7 @@ public class UtilityService {
                         result.put("network", detailsMap.get("network"));
                         result.put("referenceNumber", detailsMap.get("reference_number"));
                         //Ask Bode how to deal with messaging
+                        this.notificationMessage(customerId,"AIRTIME-RECHARGE", amount, operationId);
                     }
                 }
                 else{
@@ -608,4 +614,61 @@ public class UtilityService {
         }
         return response;
     }
+
+    public void notificationMessage (String customerId, String operation, double amount, String operationId){
+
+        //Message Type
+        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        String message = "";
+        if(operation.equals("AIRTIME-RECHARGE")){
+            message = "Dear Customer Airtime/Data Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
+        }
+        //Get notification customer subscribe for;
+        Optional<MessageServiceEntity> getUserNotificationSubscribe = messageServiceRepo.findByCustomerId(customerId);
+        if(getUserNotificationSubscribe.isPresent()){
+            MessageServiceEntity messageServiceEntity = getUserNotificationSubscribe.get();
+            String emailSubscriber = messageServiceEntity.getEmail();
+            String smsSubscriber = messageServiceEntity.getSms();
+            String whatsAppSubscriber = messageServiceEntity.getWhatsapp();
+            //Get User Email Address
+            Optional<UserAccountEntity> getUserDetails = userAccountRepo.findByPhonenumber(customerId);
+            UserAccountEntity userAccountEntity = getUserDetails.get();
+            String emailAddress = userAccountEntity.getEmail();
+            String username = userAccountEntity.getAccountName();
+
+            if(emailSubscriber.equals("0")){
+                 notification.emailNotification(emailAddress,username,"Zippyworld", message);
+            }
+            //Check User Balance before sending whatsapp and sms as whatsapp cost 5 naira and sms cost 4 naira
+            Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+
+            if(smsSubscriber.equals("0")){
+                if(customerWalletBalanceAmount >= 4) {
+                    int smsResponse =   notification.smsNotification(customerId, "Zippyworld", message);
+                    if(smsResponse == 0){
+                        customerWalletBalanceAmount -=4;
+                        //Log the Transaction
+                        loggingService.customerWalletLogging(operationId,"MAIN","DR","","","","SMS Notification Charges",
+                                4,"","",0,4,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),todayDate);
+                    }
+                }
+            }
+
+            if(whatsAppSubscriber.equals("0")){
+                if(customerWalletBalanceAmount >= 5) {
+                    int whatsappResponse = notification.whatsappNotification(customerId, "Zippyworld", message);
+                    if(whatsappResponse == 0){
+                        customerWalletBalanceAmount -=5;
+                        loggingService.customerWalletLogging(operationId,"MAIN","DR","","","","WhatsApp Notification Charges",
+                                5,"","",0,5,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),todayDate);
+                    }
+
+                }
+            }
+
+        }
+    }
+
 }

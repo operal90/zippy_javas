@@ -30,7 +30,7 @@ public class LoggingService {
     CommissionTxnLogRepo commissionTxnLogRepo;
     @Transactional
     public Long networkRequestLog(String operationId, String txnId, String channel, String userTypeId,
-                                  String customerId, String userPackageId, float amount,
+                                  String customerId, String userPackageId, double amount,
                                   double totalCommission, double totalCharge, String recipient,
                                   String serviceAccountNumber, String provider, String requestParam, String status, String rsCplxMsg, String rsActlMsg) {
         NetworkTxnLogEntity networkTxnLogEntity = new NetworkTxnLogEntity();

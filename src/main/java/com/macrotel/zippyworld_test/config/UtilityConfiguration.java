@@ -144,15 +144,15 @@ public class UtilityConfiguration {
         return operationValue;
     }
 
-    public Float formattedAmount(String amount){
-        Float removeCommaAmount = Float.parseFloat(this.removeComma(amount));
+    public Double formattedAmount(String amount){
+        double removeCommaAmount = Double.parseDouble(this.removeComma(amount));
         DecimalFormat decimalFormat = new DecimalFormat("#.#####");
-        return Float.parseFloat(decimalFormat.format(removeCommaAmount));
+        return Double.parseDouble(decimalFormat.format(removeCommaAmount));
     }
 
-    public Float twoDecimalFormattedAmount(String amount){
-        Float removeCommaAmount = Float.parseFloat(this.removeComma(amount));
+    public Double twoDecimalFormattedAmount(String amount){
+        double removeCommaAmount = Double.parseDouble(this.removeComma(amount));
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        return Float.parseFloat(decimalFormat.format(removeCommaAmount));
+        return Double.parseDouble(decimalFormat.format(removeCommaAmount));
     }
 }
