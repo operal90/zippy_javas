@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,6 +29,10 @@ public class LoggingService {
     CustomerCommissionWalletRepo customerCommissionWalletRepo;
     @Autowired
     CommissionTxnLogRepo commissionTxnLogRepo;
+    @Autowired
+    ElectricityTxnLogRepo electricityTxnLogRepo;
+
+
     @Transactional
     public Long networkRequestLog(String operationId, String txnId, String channel, String userTypeId,
                                   String customerId, String userPackageId, double amount,
@@ -62,9 +67,20 @@ public class LoggingService {
             networkTxnLog.setResponseComplexMessage(responseMessage);
             networkTxnLog.setResponseActualMessage(actualMessage);
             networkTxnLog.setStatus(status);
-            networkTxnLog.setTimeOut(String.valueOf(LocalDateTime.now()));
+            networkTxnLog.setTimeOut(String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
             networkTxnLogRepo.save(networkTxnLog);
         }
+    }
+
+    public void electricityRequestUpdate(String token, String id, String responseMessage, String status, String actualMessage){
+        Optional<ElectricityTxnLogEntity> getElectricityLog = electricityTxnLogRepo.findById(Long.parseLong(id));
+        ElectricityTxnLogEntity electricityTxnLogEntity = getElectricityLog.get();
+        electricityTxnLogEntity.setResponseComplexMessage(responseMessage);
+        electricityTxnLogEntity.setResponseActualMessage(actualMessage);
+        electricityTxnLogEntity.setStatus(status);
+        electricityTxnLogEntity.setToken(token);
+        electricityTxnLogEntity.setTimeOut(String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
+        electricityTxnLogRepo.save(electricityTxnLogEntity);
     }
 
     public void ledgerAccountLogging(String referenceId, String operationType, String serviceAccountNo, String operationSummary,
@@ -81,9 +97,9 @@ public class LoggingService {
         ledgerAccountRepo.save(ledgerAccountEntity);
     }
 
-    public void customerWalletLogging(String referenceId, String operationEvent, String operationType, String userTypeId, String userPackageId, String serviceAccountNo,
-                                      String operationSummary, double amount, String commissionType, String commissionMode, double commissionCharge, double amountCharge,
-                                      String customerId, double walletBalance, String status, String operationAt){
+    public void customerWalletLogging(String referenceId, String operationEvent, String operationType, String userTypeId, String userPackageId,
+                                      String serviceAccountNo,String operationSummary, double amount, String commissionType, String commissionMode,
+                                      double commissionCharge, double amountCharge,String customerId, double walletBalance, String status, String operationAt){
         CustomerWalletEntity customerWalletEntity = new CustomerWalletEntity();
         customerWalletEntity.setReferenceId(referenceId);
         customerWalletEntity.setOperationEvent(operationEvent);
@@ -103,8 +119,9 @@ public class LoggingService {
         customerWalletRepo.save(customerWalletEntity);
     }
 
-    public void serviceWalletLogging(String referenceId, String operationType, String userTypeId, String userPackageId, String serviceAccountNo, String customerId, String operationSummary,
-                                     double amount, String commissionType, double commissionCharge, double amountCharge, double walletBalance, String operationAt){
+    public void serviceWalletLogging(String referenceId, String operationType, String userTypeId, String userPackageId, String serviceAccountNo, String customerId,
+                                     String operationSummary,double amount, String commissionType, double commissionCharge, double amountCharge,
+                                     double walletBalance, String operationAt){
         ServiceWalletEntity serviceWalletEntity = new ServiceWalletEntity();
         serviceWalletEntity.setReferenceId(referenceId);
         serviceWalletEntity.setOperationType(operationType);
@@ -143,8 +160,8 @@ public class LoggingService {
         customerCommissionWalletEntity.setWalletBalance(commissionWalletBalance);
         customerCommissionWalletRepo.save(customerCommissionWalletEntity);
     }
-    public void instanceCommissionFundingLogging(String operationId, String customerId, String userTypeId, String userPackageId, String serviceAccountNumber, double amount,
-                                                 double buyerWalletBalance, String operationSummary, String service){
+    public void instanceCommissionFundingLogging(String operationId, String customerId, String userTypeId, String userPackageId, String serviceAccountNumber,
+                                                 double amount,double buyerWalletBalance, String operationSummary, String service){
         String txnId = operationId;
       operationId = operationId +"_CMS";
       CustomerWalletEntity customerWalletEntity = new CustomerWalletEntity();
@@ -179,5 +196,35 @@ public class LoggingService {
             commissionTxnLogRepo.save(commissionTxnLogEntity);
       }
 
+    }
+
+    @Transactional
+    public Long electricityRequestLogging(String operationId, String txnId, String channel, String userTypeId,String customerId, String userPackageId,
+                                          String customerName, String customerAddress, double amount, double commissionAmount, double totalCharge,
+                                          String cardIdentity, String operatorId, String accountTypeId,String provider, String params, String status,
+                                          String complexMsg, String actualMsg){
+        ElectricityTxnLogEntity electricityTxnLogEntity = new ElectricityTxnLogEntity();
+        electricityTxnLogEntity.setOperationId(operationId);
+        electricityTxnLogEntity.setTxnId(txnId);
+        electricityTxnLogEntity.setChannel(channel);
+        electricityTxnLogEntity.setUserTypeId(userTypeId);
+        electricityTxnLogEntity.setUserPackageId(userPackageId);
+        electricityTxnLogEntity.setCustomerId(customerId);
+        electricityTxnLogEntity.setCustomerNames(customerName);
+        electricityTxnLogEntity.setCustomerAddress(customerAddress);
+        electricityTxnLogEntity.setAmount(amount);
+        electricityTxnLogEntity.setCommisionCharge(commissionAmount);
+        electricityTxnLogEntity.setAmountCharge(totalCharge);
+        electricityTxnLogEntity.setCardIdentity(cardIdentity);
+        electricityTxnLogEntity.setOperatorId(operationId);
+        electricityTxnLogEntity.setAccountTypeId(accountTypeId);
+        electricityTxnLogEntity.setProvider(provider);
+        electricityTxnLogEntity.setRequestParam(params);
+        electricityTxnLogEntity.setStatus(status);
+        electricityTxnLogEntity.setResponseComplexMessage(complexMsg);
+        electricityTxnLogEntity.setResponseActualMessage(actualMsg);
+
+        electricityTxnLogEntity = electricityTxnLogRepo.save(electricityTxnLogEntity);
+        return electricityTxnLogEntity.getId();
     }
 }

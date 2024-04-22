@@ -8,7 +8,9 @@ public class AppConstants {
     public  static final Object EMPTY_RESULT = new Object [0];
     public static final String PHONE_NUMBER_VALIDATION_REGEX = "^\\d{11}$";
     public static final String PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()-[{}]:;'?/*~$^+=<>.]).{6,20}$";
-    public static final String AMOUNT_VALIDATION_REGEX = "^[\\d,\\.]+$";
+//    public static final String AMOUNT_VALIDATION_REGEX = "^[\\d,\\.]+$";
+    public static final String AMOUNT_VALIDATION_REGEX = "^\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?$";
+
 
     public static final String PAYMENT_VALIDATION_REGEX = "^(?i)(bank transfer|card payment)$";
 
@@ -25,5 +27,9 @@ public class AppConstants {
     public static final String  END_POINT_TLS = "https://zippyworld.com.ng:8443/telcom_live_services/main/api/";
     public static final String CLIENT_ID_TLS = "ZW5AWYOK-983-IOP";
     public static final String X_API_KEY_TLS = "3216724";
+    public static final String ELECTRICITY_SERVICE_CODE = "ZWOC002";
+    public static final String TELCOM_SERVICE_CODE = "ZWOC001";
+    public static final String CABLE_TV_SERVICE_CODE = "ZWOC003";
+    public static final String BANK_TRANSFER_SERVICE_CODE = "ZWOC004";
 
 }

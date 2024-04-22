@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT nos.service_account_no, nos.service_commission_account_no, nps.network, nps.code, nps.provider ,nos.description " +
@@ -68,4 +69,20 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Modifying
     @Query(value = "UPDATE customer_wallets SET status =:status WHERE customer_id =:customerId AND reference_id LIKE CONCAT(:referenceId, '%')", nativeQuery = true)
     void updateTransactionStatus(@Param("customerId") String customerId, @Param("referenceId") String referenceId, @Param("status") String status);
+
+    @Query(value = "SELECT id FROM network_txn_logs WHERE customer_id =:customerId AND recipient_no =:identityNumber AND time_in BETWEEN :timeIn AND :timeOut ", nativeQuery = true)
+    List<Object[]> networkTxnLogPreviousTime(@Param("customerId") String customerId, @Param("identityNumber") String identityNumber, @Param("timeIn") String timeIn, @Param("timeOut") String timeOut);
+
+    @Query(value = "SELECT id FROM electric_txn_logs WHERE customer_id =:customerId AND card_identity =:identityNumber AND time_in BETWEEN :timeIn AND :timeOut ", nativeQuery = true)
+    List<Object[]> electricityTxnLogPreviousTime(@Param("customerId") String customerId, @Param("identityNumber") String identityNumber, @Param("timeIn") String timeIn, @Param("timeOut") String timeOut);
+
+    @Query(value = "SELECT id FROM cable_tv_txn_logs WHERE customer_id =:customerId AND card_identity =:identityNumber AND time_in BETWEEN :timeIn AND :timeOut ", nativeQuery = true)
+    List<Object[]> cableTvTxnLogPreviousTime(@Param("customerId") String customerId, @Param("identityNumber") String identityNumber, @Param("timeIn") String timeIn, @Param("timeOut") String timeOut);
+
+    @Query(value = "SELECT id FROM bank_transfer_txn_logs WHERE customer_id =:customerId AND account_no =:identityNumber AND time_in BETWEEN :timeIn AND :timeOut ", nativeQuery = true)
+    List<Object[]> bankTrfTxnLogPreviousTime(@Param("customerId") String customerId, @Param("identityNumber") String identityNumber, @Param("timeIn") String timeIn, @Param("timeOut") String timeOut);
+
+    @Query(value = "SELECT service_name san FROM service_accounts WHERE service_account_no =:serviceAccountCode", nativeQuery = true)
+    List<Object[]> getServiceAccountName(@Param("serviceAccountCode") String serviceAccountCode);
+
 }

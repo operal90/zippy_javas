@@ -55,6 +55,8 @@ public class AppService {
     OTPRepo otpRepo;
     @Autowired
     CustomerIdentityRecordRepo customerIdentityRecordRepo;
+    @Autowired
+    VerificationRepo verificationRepo;
 
     @Autowired
     NetworkTxnLogRepo networkTxnLogRepo;
@@ -83,13 +85,15 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-            //Check if Identity Number already exist
-            Optional<UserAccountEntity> isIdentityNumberExist  = userAccountRepo.findByIdentityNumber(userCreationData.getIdentityNumber());
-            if(isIdentityNumberExist.isPresent()){
-                baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("Identity Number already registered.");
-                baseResponse.setResult(EMPTY_RESULT);
-                return baseResponse;
+            //Check if Identity Number already exist if Register without BVN. Registration without BVN is 0001
+            if(!Objects.equals(userCreationData.getIdentityNumber(), "0001")){
+                Optional<UserAccountEntity> isIdentityNumberExist = userAccountRepo.findByIdentityNumber(userCreationData.getIdentityNumber());
+                if (isIdentityNumberExist.isPresent()) {
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("Identity Number already registered.");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
             }
             //Check if Email Address already exist
             Optional<UserAccountEntity> isEmailExist = userAccountRepo.findByEmail(userCreationData.getEmail());
@@ -140,6 +144,21 @@ public class AppService {
                     userAccountName = (String) apiResponse.get("account_name");
                 }
             }
+            String kycLevel = "1";
+            if(Objects.equals(userCreationData.getIdentityNumber(),"0001")){
+                kycLevel = "0";
+            }
+            //Check if the user email is the same with the email gotten from the identity verification
+            String userIdentityEmail = "";
+            Optional<VerificationEntity> getUserEmail = verificationRepo.getUserVerificationData(userCreationData.getPhonenumber());
+            if(getUserEmail.isPresent()){
+                VerificationEntity verificationEntity = getUserEmail.get();
+                userIdentityEmail =  verificationEntity.getIdentityEmail();
+            }
+            if(!Objects.equals(userIdentityEmail, userCreationData.getEmail())){
+                kycLevel = "0";
+            }
+
             //Insert into User Account Table
             UserAccountEntity userAccountEntity = new UserAccountEntity();
             userAccountEntity.setFirstname(userCreationData.getFirstname());
@@ -155,7 +174,7 @@ public class AppService {
             userAccountEntity.setIdentityNumber(userCreationData.getIdentityNumber());
             userAccountEntity.setStatus("0");
             userAccountEntity.setWtlStatus("2");
-            userAccountEntity.setKycLevel("1");
+            userAccountEntity.setKycLevel(kycLevel);
             userAccountEntity.setParentAggregatorCode(userCreationData.getAggregator_code());
             userAccountEntity.setGender(userCreationData.getGender());
             userAccountEntity.setEmail(userCreationData.getEmail());
@@ -226,7 +245,7 @@ public class AppService {
             MessageServiceEntity messageServiceEntity = new MessageServiceEntity();
             messageServiceEntity.setCustomerId(userCreationData.getPhonenumber());
             messageServiceEntity.setEmail("0");
-            messageServiceEntity.setSms("1");
+            messageServiceEntity.setSms("0");
             messageServiceEntity.setWhatsapp("1");
             messageServiceRepo.save(messageServiceEntity);
 
@@ -324,6 +343,7 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
+            String emailAddress ="";
             String bvnUrl = "https://zippyworld.com.ng:8443/macrotel_info_verification_services/api/bvn";
             String ninUrl = "https://zippyworld.com.ng:8443/macrotel_info_verification_services/api/nin";
             Map<String, String> headers = new HashMap<>();
@@ -342,6 +362,7 @@ public class AppService {
                     baseResponse.setStatus_code(ERROR_STATUS_CODE);
                     baseResponse.setMessage("NIN API Server down");
                     baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
                 }
                 else{
                     Map<String, Object> apiResponse = (Map<String, Object>) getUserBVNData;
@@ -350,8 +371,18 @@ public class AppService {
                         baseResponse.setStatus_code(ERROR_STATUS_CODE);
                         baseResponse.setMessage("No result found for this NIN");
                         baseResponse.setResult(EMPTY_RESULT);
+                        return baseResponse;
                     }
                     else{
+                        Map<String, Object> apiResult = (Map<String, Object>) apiResponse.get("result");
+                          if(apiResult != null){
+                              if (apiResult.containsKey("personal_info") && apiResult.get("personal_info") != null) {
+                                  Map<String, Object> personalInfo = (Map<String, Object>) apiResult.get("personal_info");
+                                  if (personalInfo.containsKey("email") && personalInfo.get("email") != null) {
+                                      emailAddress = (String) personalInfo.get("email");
+                                  }
+                              }
+                          }
                         baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
                         baseResponse.setMessage(SUCCESS_MESSAGE);
                         baseResponse.setResult(apiResponse.get("result"));
@@ -368,6 +399,7 @@ public class AppService {
                     baseResponse.setStatus_code(ERROR_STATUS_CODE);
                     baseResponse.setMessage("BVN API Server down");
                     baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
                 }
                 else{
                     Map<String, Object> apiResponse = (Map<String, Object>) getUserBVNData;
@@ -376,15 +408,30 @@ public class AppService {
                         baseResponse.setStatus_code(ERROR_STATUS_CODE);
                         baseResponse.setMessage("No result found for this BVN");
                         baseResponse.setResult(EMPTY_RESULT);
+                        return baseResponse;
                     }
                     else{
+                        Map<String, Object> apiResult = (Map<String, Object>) apiResponse.get("result");
+                        if (apiResult.containsKey("personal_info") && apiResult.get("personal_info") != null) {
+                            Map<String, Object> personalInfo = (Map<String, Object>) apiResult.get("personal_info");
+                            if (personalInfo.containsKey("email") && personalInfo.get("email") != null) {
+                                emailAddress = (String) personalInfo.get("email");
+                            }
+                        }
                         baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
                         baseResponse.setMessage(SUCCESS_MESSAGE);
                         baseResponse.setResult(apiResponse.get("result"));
                     }
                 }
-
             }
+            emailAddress = emailAddress.toLowerCase();
+            VerificationEntity verificationEntity = new VerificationEntity();
+            verificationEntity.setIdentityId(identityId);
+            verificationEntity.setIdentityEmail(emailAddress);
+            verificationEntity.setIdentityNumber(verifyUserIdentityData.getIdentityNumber());
+            verificationEntity.setCustomerId(verifyUserIdentityData.getPhoneNumber());
+            verificationRepo.save(verificationEntity);
+
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
@@ -603,16 +650,45 @@ public class AppService {
     //Utilities
     public BaseResponse airtimePurchase(AirtimePurchaseData airtimePurchaseData){
         try{
-            //Confirm Security answer
+            //Get necessary data needed
             String securityAnswer = utilities.shaEncryption(airtimePurchaseData.getSecurity_answer());
             String customerId = airtimePurchaseData.getPhonenumber();
             String recipient = airtimePurchaseData.getBeneficiary_phonenumber();
             double amount = utilities.formattedAmount(airtimePurchaseData.getAmount());
             String channel = airtimePurchaseData.getChannel();
+            //Check if user account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Confirm Security answer
             boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
             if(!confirmSecurityAnswer){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
                 baseResponse.setMessage("Incorrect Security Answer");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check if user session token
+            int sessionToken = utilityService.checkSessionToken(customerId,airtimePurchaseData.getToken());
+            if(sessionToken != 0){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Session Expired, Kindly Relogin");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check User have sufficient balance
+            Object getCustomerWalletBalance = utilityService.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+            if(amount > customerWalletBalanceAmount){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Insufficient Wallet Balance");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
@@ -634,8 +710,7 @@ public class AppService {
                 }
             }
             //Get User Details
-            Optional<UserAccountEntity> getCustomerDetail = userAccountRepo.findByPhonenumber(customerId);
-            UserAccountEntity userAccountEntity =  getCustomerDetail.get();
+            UserAccountEntity userAccountEntity =  isCustomerExist.get();
             String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
             String customerEmail = userAccountEntity.getEmail();
             String userTypeId = userAccountEntity.getUserType();
@@ -727,6 +802,7 @@ public class AppService {
                     aggregatorCommissionAmount =servicecommissionMap.get("commissionMaster");
                 }
                 totalCommission = commissionAmount + aggregatorCommissionAmount;
+                //check if user's aggregator can get commission
                 cafValue = utilityService.checkAggregatorFund(customerId);
             }
 
@@ -737,8 +813,7 @@ public class AppService {
                     totalCommission,totalCharge,recipient,serviceAccountNumber,provider,"","","","");
             if(responseId > 0){
                 //CheckSessionToken\
-                
-                int sessionToken = utilityService.checkSessionToken(customerId,airtimePurchaseData.getToken());
+
                 if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
                     try{
                         //Connect to the airtimePurchase utility
@@ -776,6 +851,8 @@ public class AppService {
                         sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
                         baseResponse.setStatus_code(ERROR_STATUS_CODE);
                         baseResponse.setMessage("Your airtime recharge of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");
+                        baseResponse.setResult(EMPTY_RESULT);
+                        return baseResponse;
                     }
                 }
                 else{
@@ -796,6 +873,187 @@ public class AppService {
                 return baseResponse;
             }
 
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse electricityVending(ElectricityData electricityData){
+        try{
+            //Get necessary data needed
+            String securityAnswer = utilities.shaEncryption(electricityData.getSecurity_answer());
+            String customerId = electricityData.getPhonenumber();
+            String token = electricityData.getToken();
+            String cardIdentity = electricityData.getCard_identity();
+            double amount = utilities.formattedAmount(electricityData.getAmount());
+            String buyerPhoneNumber = electricityData.getBuyer_phonenumber();
+            String buyerEmailAddress = electricityData.getBuyer_email();
+            String providerRef = electricityData.getProvider_ref();
+            String buyerName = electricityData.getCustomer_name();
+            String customerAddress = electricityData.getCustomer_address();
+            String channel = electricityData.getChannel();
+            String operatorId = electricityData.getOperator_id();
+            String accountTypeId = electricityData.getAccount_type_id();
+            String provider = electricityData.getProvider();
+
+            //Check if Customer Account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Confirm Security answer
+            boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
+            if(!confirmSecurityAnswer){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Incorrect Security Answer");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check if user session token
+            int sessionToken = utilityService.checkSessionToken(customerId,token);
+            if(sessionToken != 0){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Session Expired, Kindly Relogin");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check User have sufficient balance
+            Object getCustomerWalletBalance = utilityService.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+            if(amount > customerWalletBalanceAmount){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Insufficient Wallet Balance");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check previous transaction
+            int checkPreviousStatus = utilityService.checkPreviousTxnStatus(customerId, cardIdentity, ELECTRICITY_SERVICE_CODE);
+            if(checkPreviousStatus !=1){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Please wait for 3 minutes before you can vend electricity to "+cardIdentity);
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get User Details
+            UserAccountEntity userAccountEntity =  isCustomerExist.get();
+            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
+            String customerEmail = userAccountEntity.getEmail();
+            String userTypeId = userAccountEntity.getUserType();
+            String userPackageId = userAccountEntity.getUserPackageId();
+            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
+            String commissionMode = userAccountEntity.getCommissionMode();
+            String pndStatus = userAccountEntity.getPndStatus();
+
+            //Check if User is on Post No Debit
+            if(!Objects.equals("1", pndStatus)){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            String serviceAccountNo = "1000000012";
+            String serviceCommissionAccountNo = "1000000061";
+            //Check if users aggregator can get commission
+            int cafValue = 1;
+            double totalCommission = 0;
+            double commissionAmount = 0;
+            double aggregatorCommissionAmount = 0;
+            if(Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode, "BM")){
+                cafValue = 0;
+                //Get User Commission Value
+                Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNo,userTypeId,userPackageId);
+                Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                double commissionMaster = servicecommissionMap.get("commissionMaster");
+                double commissionUser = servicecommissionMap.get("commissionUser");
+                totalCommission =  commissionUser + commissionMaster;
+
+
+                UtilityResponse getAgentCommissionStructure =utilityService.agentCommissionStructure(totalCommission,buzAggregatorCode,customerId,userTypeId,userPackageId,serviceAccountNo);
+                if(!getAgentCommissionStructure.getStatusCode().equals(ERROR_STATUS_CODE)){
+                    Map<String, Object> result = (Map<String, Object>) getAgentCommissionStructure.getResult();
+                    for (Map.Entry<String, Object> entry : result.entrySet()) {
+                        Map<String, Object> agentDetail = (Map<String, Object>) entry.getValue();
+                        String agentType = (String) agentDetail.get("agentType");
+                        if (agentType.equals("BO")) {
+                            commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
+                        }else if (agentType.equals("BM")) {
+                            commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
+                        }
+                    }
+                }
+
+            }
+            else{
+                Object getPromoServiceCommission =  utilityService.getPromoServiceCommission(userTypeId,userPackageId,customerId,serviceAccountNo,amount,parentAggregatorCode);
+                Map<String, Double> commissionMap = (Map<String, Double>) getPromoServiceCommission;
+                double commissionMaster = commissionMap.get("commissionMaster");
+                double commissionUser = commissionMap.get("commissionUser");
+                if(!Objects.equals(commissionMaster,0.0) && !Objects.equals(commissionUser,0.0)){
+                    commissionAmount = commissionUser;
+                    aggregatorCommissionAmount = commissionMaster;
+                }
+                else {
+                    Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNo,userTypeId,userPackageId);
+                    Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                    commissionAmount = servicecommissionMap.get("commissionUser");
+                    aggregatorCommissionAmount =servicecommissionMap.get("commissionMaster");
+                }
+                totalCommission = commissionAmount + aggregatorCommissionAmount;
+                //check if user's aggregator can get commission
+                cafValue = utilityService.checkAggregatorFund(customerId);
+            }
+
+            double totalCharge = utilities.formattedAmount(String.valueOf(amount-totalCommission));
+            String txnId = customerId+"-"+utilities.randomDigit(9);
+            String operationId = utilities.getOperationId("NU");
+            String params = buyerPhoneNumber+"|"+buyerEmailAddress+"|"+providerRef+"|"+buyerName+"|"+customerAddress;
+
+            //Log the transaction in the electricity request logging and get id;
+            Long responseId  = loggingService.electricityRequestLogging(operationId,txnId,channel,userTypeId,customerId,userPackageId,buyerName,customerAddress,amount,totalCommission,
+                                                    totalCharge,cardIdentity,operatorId,accountTypeId,provider,params,"","","");
+            if(responseId > 0) {
+                //Check session Token
+                if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
+                    try{
+                        Object electricityPurchaseUtility =
+                    }
+                    catch (Exception ex){
+                        double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
+                        sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
+                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                        baseResponse.setMessage("Your Electricity vending of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");
+                        baseResponse.setResult(EMPTY_RESULT);
+                        return baseResponse;
+                    }
+                }
+                else{
+                    loggingService.electricityRequestUpdate("",String.valueOf(responseId),"Session Expired, Kindly Relogin","5","Unsuccessful");
+                    baseResponse.setStatus_code("5");
+                    baseResponse.setMessage("Session Expired, Kindly Relogin");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+            else{
+                String newTransactionId = txnId+"-DT-"+utilities.randomDigit(10);
+                loggingService.electricityRequestLogging(operationId,txnId,channel,userTypeId,customerId,userPackageId,buyerName,customerAddress,amount,totalCommission,
+                        totalCharge,cardIdentity,operatorId,accountTypeId,provider,params,"3",String.valueOf(responseId),"Unsuccessful");
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage(String.valueOf(responseId));
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

@@ -671,4 +671,143 @@ public class UtilityService {
         }
     }
 
+    public Integer checkPreviousTxnStatus(String customerId, String identityNumber, String serviceCode){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        int response = 1;
+        List <Object[]>result = new ArrayList<>();
+        String currentTime = String.valueOf(LocalDateTime.now().plusHours(1).format(formatter));
+        String currentTimePlusFive = String.valueOf(LocalDateTime.now().plusHours(1).plusMinutes(59).format(formatter));
+
+        if(Objects.equals(serviceCode,TELCOM_SERVICE_CODE)){
+            result = sqlQueries.networkTxnLogPreviousTime(customerId,identityNumber,currentTime,currentTimePlusFive);
+        } else if (Objects.equals(serviceCode, ELECTRICITY_SERVICE_CODE)) {
+            result = sqlQueries.electricityTxnLogPreviousTime(customerId,identityNumber,currentTime,currentTimePlusFive);
+        } else if (Objects.equals(serviceCode, CABLE_TV_SERVICE_CODE)) {
+            result = sqlQueries.cableTvTxnLogPreviousTime(customerId,identityNumber,currentTime,currentTimePlusFive);
+        } else if (Objects.equals(serviceCode, BANK_TRANSFER_SERVICE_CODE)) {
+            result = sqlQueries.bankTrfTxnLogPreviousTime(customerId,identityNumber,currentTime,currentTimePlusFive);
+        }
+        if(result !=null && !result.isEmpty() )
+        {
+            response = 0;
+        }
+        return response;
+    }
+
+    public Object electricityPurchase(String operationId, String customerId, String customerName, String email, String userTypeId, String userPackageId, String commissionMode,
+                                      String cardIdentity, String serviceAccountNumber, String serviceCommissionAccountNumber, double amount, double commissionAmount,
+                                      double amountCharge, String channel, String accountTypeId, String operatorId, String providerRef, String buyerPhoneNumber,
+                                      String buyerEmail, String provider, String buyerName, String customerAddress, String value){
+        HashMap<String, Object> result = new HashMap<>();
+        String token = "";
+        String providerResponse = "";
+        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+        //Check Daily Transaction Balance
+        Object checkDailyTxnBalance = this.checkDailyTxnBalance(customerId,amountCharge,serviceAccountNumber);
+        Map<String, String> dailyTxnBalance = (Map<String, String>) checkDailyTxnBalance;
+        String dailyTxnBalanceStatusCode = dailyTxnBalance.get("statusCode");
+        String dailyTxnBalanceMessage = dailyTxnBalance.get("message");
+        if(Objects.equals(dailyTxnBalanceStatusCode, "0")){
+            //Get customer wallet balance
+            Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+
+            if(Objects.equals(customerWalletBalanceStatusCode, "0")){
+                if(customerWalletBalanceAmount >= amountCharge){
+                    //Get Service Account Name details
+                    String serviceName = this.getServiceAccountDetails(serviceAccountNumber);
+                    if(!Objects.equals(serviceName, "")){
+                        double formattedAmount = utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amount));
+                        String operationSummary = customerName + " sold electricity power of N"+formattedAmount+" to  "+buyerName+" ("+cardIdentity+")";
+                        String commissionOperationSummary = "Commission on sold of electricity power of N"+formattedAmount+" to  "+buyerName+" ("+cardIdentity+")";
+
+                        double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amount));
+                        //Get Service Wallet Balance
+                        double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
+                        double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(walletBalance +amountCharge));
+                        //Log Into Ledger Account(CR and DR),service wallet, customer wallet.
+                        loggingService.ledgerAccountLogging(operationId,"CR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
+                        loggingService.ledgerAccountLogging(operationId,"DR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
+                        loggingService.serviceWalletLogging(operationId,"CR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,
+                                "",commissionAmount,amountCharge,receiverWalletBalance,todayDate);
+                        loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,
+                                amount,"PT",commissionMode,0,amount,customerId,buyerWalletBalance,"",todayDate);
+
+                        amount = utilityConfiguration.zeroDecimalFormattedAmount(String.valueOf(amount));
+
+                        Object thirdPartyElectricityResponse = new Object[0];
+                        if(Objects.equals(provider,"IST")){
+
+                        } else if (Objects.equals(provider,"DML")) {
+
+                        } else if (Objects.equals(provider,"SHAGO")) {
+
+                        }
+                        Map<String, Object> electricityResponseMap = (Map<String, Object>) thirdPartyElectricityResponse;
+                        String apiStatusCode = (String) electricityResponseMap.get("statusCode");
+                        Object apiDetails = electricityResponseMap.get("details");
+                        String apiMessage = (String) electricityResponseMap.get("message");
+                        String apiStatusMessage = (String) electricityResponseMap.get("statusMessage");
+
+                        if(!Objects.equals(apiStatusCode, "0")){
+                            if(Objects.equals(apiStatusCode, "1")){
+                                //Reversal
+                                String reversalId = utilityConfiguration.randomDigit(10);
+                                operationSummary = "Reversal of "+operationSummary;
+                                loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,amount);
+                                this.reversalOperation(reversalId,customerId,userTypeId,userPackageId,amount,channel,serviceAccountNumber,operationSummary);
+                                String reversalMessage = "Dear "+customerName +apiMessage+" .Thank you for using Zippyworld";
+                                result.put("statusCode", apiStatusCode);
+                                result.put("message", reversalMessage);
+                                result.put("statusMessage", apiStatusMessage);
+                                result.put("token", "");
+                            }
+                        }
+                        else{
+
+                        }
+                    }
+                    else{
+                        result.put("statusCode", "1");
+                        result.put("message", "Invalid Service Code");
+                        result.put("statusMessage", "Failed");
+                        result.put("token", "");
+                    }
+                }
+                else{
+                    result.put("statusCode", "1");
+                    result.put("message", "Insufficient Wallet Balance");
+                    result.put("statusMessage", "Failed");
+                    result.put("token", "");
+                }
+            }
+            else{
+                result.put("statusCode", "1");
+                result.put("message", customerWalletBalance.get("message"));
+                result.put("statusMessage", "Failed");
+                result.put("token", "");
+            }
+        }
+        else{
+            result.put("statusCode", "1");
+            result.put("message", dailyTxnBalanceMessage);
+            result.put("token", "");
+            result.put("statusMessage", "Failed");
+        }
+        return result;
+    }
+
+
+    public String getServiceAccountDetails(String serviceAccountCode){
+        String serviceName = "";
+        List<Object[]> getServiceAccountDetails = sqlQueries.getServiceAccountName(serviceAccountCode);
+        if(!getServiceAccountDetails.isEmpty()){
+            Object[] serviceAccountDetails = getServiceAccountDetails.get(0);
+            serviceName = serviceAccountDetails[0].toString();
+        }
+        return serviceName;
+    }
 }

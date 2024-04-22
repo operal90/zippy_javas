@@ -18,7 +18,7 @@ public class AirtimePurchaseData {
     @NotEmpty(message = "Channel cannot be empty")
     private String channel;
     @NotEmpty(message = "Amount cannot be empty")
-    @Pattern(regexp =NUMBER_VALIDATION_REGEX , message = "Amount can only be in digit")
+    @Pattern(regexp =AMOUNT_VALIDATION_REGEX , message = "Amount can only be in digit")
     private String amount;
     @NotEmpty(message = "Service Code cannot be empty")
     private String service_code;
@@ -26,8 +26,8 @@ public class AirtimePurchaseData {
     private String network_code;
     @NotEmpty(message = "Token cannot be empty")
     private String token;
-    @NotEmpty(message = "Transaction ID cannot be empty")
-    private String transaction_id;
+//    @NotEmpty(message = "Transaction ID cannot be empty")
+//    private String transaction_id;
     @NotEmpty(message = "Security cannot be empty")
     private String security_answer;
 

@@ -155,4 +155,9 @@ public class UtilityConfiguration {
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         return Double.parseDouble(decimalFormat.format(removeCommaAmount));
     }
+    public Double zeroDecimalFormattedAmount(String amount){
+        double removeCommaAmount = Double.parseDouble(this.removeComma(amount));
+        int truncatedAmount = (int) removeCommaAmount;
+        return (double) truncatedAmount;
+    }
 }
