@@ -216,14 +216,13 @@ public class LoggingService {
         electricityTxnLogEntity.setCommisionCharge(commissionAmount);
         electricityTxnLogEntity.setAmountCharge(totalCharge);
         electricityTxnLogEntity.setCardIdentity(cardIdentity);
-        electricityTxnLogEntity.setOperatorId(operationId);
+        electricityTxnLogEntity.setOperatorId(operatorId);
         electricityTxnLogEntity.setAccountTypeId(accountTypeId);
         electricityTxnLogEntity.setProvider(provider);
         electricityTxnLogEntity.setRequestParam(params);
         electricityTxnLogEntity.setStatus(status);
         electricityTxnLogEntity.setResponseComplexMessage(complexMsg);
         electricityTxnLogEntity.setResponseActualMessage(actualMsg);
-
         electricityTxnLogEntity = electricityTxnLogRepo.save(electricityTxnLogEntity);
         return electricityTxnLogEntity.getId();
     }

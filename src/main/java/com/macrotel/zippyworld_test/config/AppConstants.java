@@ -9,8 +9,7 @@ public class AppConstants {
     public static final String PHONE_NUMBER_VALIDATION_REGEX = "^\\d{11}$";
     public static final String PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()-[{}]:;'?/*~$^+=<>.]).{6,20}$";
 //    public static final String AMOUNT_VALIDATION_REGEX = "^[\\d,\\.]+$";
-    public static final String AMOUNT_VALIDATION_REGEX = "^\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?$";
-
+    public static final String AMOUNT_VALIDATION_REGEX = "^\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?$|^\\d+(?:\\.\\d+)?$";
 
     public static final String PAYMENT_VALIDATION_REGEX = "^(?i)(bank transfer|card payment)$";
 
@@ -31,5 +30,8 @@ public class AppConstants {
     public static final String TELCOM_SERVICE_CODE = "ZWOC001";
     public static final String CABLE_TV_SERVICE_CODE = "ZWOC003";
     public static final String BANK_TRANSFER_SERVICE_CODE = "ZWOC004";
+    public static final String SHAGO_HASHKEY = "55cab22fb332762c2fb1fa36c986662e7c4c9100773914f80493bae450bd0888";
+    public static final String SHAGO_TEST_BASE_URL = "https://shagopayments.com/api/test/b2b";
+    public static final String SHAGO_LIVE_BASE_URL = "https://shagopayments.com/api/live/b2b";
 
 }

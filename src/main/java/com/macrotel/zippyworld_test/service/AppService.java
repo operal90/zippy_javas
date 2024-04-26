@@ -896,7 +896,7 @@ public class AppService {
             String channel = electricityData.getChannel();
             String operatorId = electricityData.getOperator_id();
             String accountTypeId = electricityData.getAccount_type_id();
-            String provider = electricityData.getProvider();
+            String provider = "SHAGO";
 
             //Check if Customer Account exist
             Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
@@ -1022,20 +1022,26 @@ public class AppService {
             //Log the transaction in the electricity request logging and get id;
             Long responseId  = loggingService.electricityRequestLogging(operationId,txnId,channel,userTypeId,customerId,userPackageId,buyerName,customerAddress,amount,totalCommission,
                                                     totalCharge,cardIdentity,operatorId,accountTypeId,provider,params,"","","");
+
             if(responseId > 0) {
                 //Check session Token
                 if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
-                    try{
-                        Object electricityPurchaseUtility =
-                    }
-                    catch (Exception ex){
-                        double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
-                        sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
-                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                        baseResponse.setMessage("Your Electricity vending of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");
-                        baseResponse.setResult(EMPTY_RESULT);
-                        return baseResponse;
-                    }
+                    Object electricityPurchaseUtility = utilityService.electricityPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,
+                            cardIdentity,serviceAccountNo,serviceCommissionAccountNo,amount,commissionAmount,totalCharge,channel,accountTypeId,operatorId,providerRef,buyerPhoneNumber,
+                            buyerEmailAddress,provider,buyerName,customerAddress,"");
+//                    try{
+//                        Object electricityPurchaseUtility = utilityService.electricityPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,
+//                                cardIdentity,serviceAccountNo,serviceCommissionAccountNo,amount,commissionAmount,totalCharge,channel,accountTypeId,operatorId,providerRef,buyerPhoneNumber,
+//                                buyerEmailAddress,provider,buyerName,customerAddress,"");
+//                    }
+//                    catch (Exception ex){
+//                        double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
+//                        sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
+//                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+//                        baseResponse.setMessage("Your Electricity vending of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");
+//                        baseResponse.setResult(EMPTY_RESULT);
+//                        return baseResponse;
+//                    }
                 }
                 else{
                     loggingService.electricityRequestUpdate("",String.valueOf(responseId),"Session Expired, Kindly Relogin","5","Unsuccessful");

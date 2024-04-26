@@ -6,6 +6,7 @@ import com.macrotel.zippyworld_test.entity.MessageServiceEntity;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
 import com.macrotel.zippyworld_test.entity.UserAccountEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
+import com.macrotel.zippyworld_test.provider.ShagoConnect;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
 import com.macrotel.zippyworld_test.repo.MessageServiceRepo;
 import com.macrotel.zippyworld_test.repo.SettingRepo;
@@ -29,6 +30,7 @@ public class UtilityService {
     UtilityResponse utilityResponse = new UtilityResponse();
     UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
     TelecomConnect telecomConnect = new TelecomConnect();
+    ShagoConnect shagoConnect = new ShagoConnect();
     Notification notification = new Notification();
     @Autowired
     SqlQueries sqlQueries;
@@ -386,9 +388,10 @@ public class UtilityService {
                         result.put("recipient", airtimeBeneficiary);
                         result.put("recipientName", "NIL");
                         result.put("network", detailsMap.get("network"));
+                        result.put("operationSummary", operationSummary);
                         result.put("referenceNumber", detailsMap.get("reference_number"));
                         //Send Notification to user
-                        this.notificationMessage(customerId,"AIRTIME-RECHARGE", amount, operationId);
+                        this.notificationMessage(customerName,customerId,"AIRTIME-RECHARGE", amount,userPackageId,userTypeId);
                     }
                 }
                 else{
@@ -564,7 +567,7 @@ public class UtilityService {
         List<Object[]> getServiceWalletBalance = sqlQueries.getServiceWalletBalance(serviceAccountNo);
         if(!getServiceWalletBalance.isEmpty()) {
             Object[] serviceWalletBalance = getServiceWalletBalance.get(0);
-            amount = Double.parseDouble((String) serviceWalletBalance[0]);
+            amount = Double.parseDouble(serviceWalletBalance[0].toString());
         }
         return amount;
     }
@@ -615,7 +618,7 @@ public class UtilityService {
         return response;
     }
 
-    public void notificationMessage (String customerId, String operation, double amount, String operationId){
+    public void notificationMessage (String customerName, String customerId, String operation, double amount, String userPackageId, String userTypeId){
 
         //Message Type
         String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -650,7 +653,9 @@ public class UtilityService {
                     if(smsResponse == 0){
                         customerWalletBalanceAmount -=4;
                         //Log the Transaction
-                        loggingService.customerWalletLogging(operationId,"MAIN","DR","","","","SMS Notification Charges",
+                        String smsOperationId = utilityConfiguration.getOperationId("NOT");
+                        String operationSummaryMessage = customerName +" paid N4.00 for SMS Message Notification";
+                        loggingService.customerWalletLogging(smsOperationId,"MAIN","DR",userTypeId,userPackageId,"",operationSummaryMessage,
                                 4,"","",0,4,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),"Successful",todayDate);
                     }
                 }
@@ -661,7 +666,9 @@ public class UtilityService {
                     int whatsappResponse = notification.whatsappNotification(customerId, "Zippyworld", message);
                     if(whatsappResponse == 0){
                         customerWalletBalanceAmount -=5;
-                        loggingService.customerWalletLogging(operationId,"MAIN","DR","","","","WhatsApp Notification Charges",
+                        String whatsAppOperationId = utilityConfiguration.getOperationId("NOT");
+                        String operationSummaryMessage = customerName +" paid N5.00 for Whatsapp Message Notification";
+                        loggingService.customerWalletLogging(whatsAppOperationId,"MAIN","DR",userTypeId,userPackageId,"",operationSummaryMessage,
                                 5,"","",0,5,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),"Successful", todayDate);
                     }
 
@@ -720,49 +727,58 @@ public class UtilityService {
                     //Get Service Account Name details
                     String serviceName = this.getServiceAccountDetails(serviceAccountNumber);
                     if(!Objects.equals(serviceName, "")){
+
                         double formattedAmount = utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amount));
                         String operationSummary = customerName + " sold electricity power of N"+formattedAmount+" to  "+buyerName+" ("+cardIdentity+")";
                         String commissionOperationSummary = "Commission on sold of electricity power of N"+formattedAmount+" to  "+buyerName+" ("+cardIdentity+")";
-
                         double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amount));
                         //Get Service Wallet Balance
                         double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
                         double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(walletBalance +amountCharge));
-                        //Log Into Ledger Account(CR and DR),service wallet, customer wallet.
+
+//                        Log Into Ledger Account(CR and DR),service wallet, customer wallet.
                         loggingService.ledgerAccountLogging(operationId,"CR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
                         loggingService.ledgerAccountLogging(operationId,"DR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
                         loggingService.serviceWalletLogging(operationId,"CR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,
                                 "",commissionAmount,amountCharge,receiverWalletBalance,todayDate);
                         loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,
                                 amount,"PT",commissionMode,0,amount,customerId,buyerWalletBalance,"",todayDate);
-
                         amount = utilityConfiguration.zeroDecimalFormattedAmount(String.valueOf(amount));
-
+                        String serviceCode =  this.getElectricityOperatorCode(operatorId,accountTypeId);
+                        String discoCode = this.getDiscoCode(operatorId);
                         Object thirdPartyElectricityResponse = new Object[0];
-                        if(Objects.equals(provider,"IST")){
-
-                        } else if (Objects.equals(provider,"DML")) {
-
-                        } else if (Objects.equals(provider,"SHAGO")) {
-
+                        if(Objects.equals(provider,"SHAGO")){
+                            thirdPartyElectricityResponse = shagoConnect.electricityConnect(operationId,cardIdentity,amount,accountTypeId,operatorId,discoCode,buyerPhoneNumber,buyerName,customerAddress);
                         }
-                        Map<String, Object> electricityResponseMap = (Map<String, Object>) thirdPartyElectricityResponse;
-                        String apiStatusCode = (String) electricityResponseMap.get("statusCode");
-                        Object apiDetails = electricityResponseMap.get("details");
-                        String apiMessage = (String) electricityResponseMap.get("message");
-                        String apiStatusMessage = (String) electricityResponseMap.get("statusMessage");
 
-                        if(!Objects.equals(apiStatusCode, "0")){
-                            if(Objects.equals(apiStatusCode, "1")){
+                        Map<String, Object> electricityResponseMap = (Map<String, Object>) thirdPartyElectricityResponse;
+                        String electricityApiStatusCode = (String) electricityResponseMap.get("statusCode");
+                        String electricityApiToken = (String) electricityResponseMap.get("token");
+                        String electricityApiMessage = (String) electricityResponseMap.get("message");
+                        String electricityApiStatusMessage  = (String) electricityResponseMap.get("statusMessage");
+                        Object electricityApiData = electricityResponseMap.get("data");
+                        Object electricityApiResponse = electricityResponseMap.get("apiResponse");
+
+                        if(!Objects.equals(electricityApiStatusCode, "0")){
+                            if(Objects.equals(electricityApiStatusCode, "1")){
                                 //Reversal
                                 String reversalId = utilityConfiguration.randomDigit(10);
                                 operationSummary = "Reversal of "+operationSummary;
                                 loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,amount);
                                 this.reversalOperation(reversalId,customerId,userTypeId,userPackageId,amount,channel,serviceAccountNumber,operationSummary);
-                                String reversalMessage = "Dear "+customerName +apiMessage+" .Thank you for using Zippyworld";
-                                result.put("statusCode", apiStatusCode);
+                                String reversalMessage = "Dear "+customerName +", "+electricityApiMessage+" .Thank you for using Zippyworld";
+                                result.put("statusCode", "1");
                                 result.put("message", reversalMessage);
-                                result.put("statusMessage", apiStatusMessage);
+                                result.put("messageDetails" , electricityApiResponse);
+                                result.put("statusMessage", electricityApiStatusMessage);
+                                result.put("token", "");
+                            }
+                            else{
+                                String reversalMessage = "Dear "+customerName +", "+electricityApiMessage+" .Thank you for using Zippyworld";
+                                result.put("statusCode", "1");
+                                result.put("message", reversalMessage);
+                                result.put("statusMessage", electricityApiStatusMessage);
+                                result.put("messageDetails" , electricityApiResponse);
                                 result.put("token", "");
                             }
                         }
@@ -809,5 +825,25 @@ public class UtilityService {
             serviceName = serviceAccountDetails[0].toString();
         }
         return serviceName;
+    }
+
+    public String getElectricityOperatorCode(String operatorId, String accountTypeId){
+        String code ="";
+        List<Object[]> getElectricityOperatorCode = sqlQueries.getElectricityOperatorCode(operatorId, accountTypeId);
+        if(!getElectricityOperatorCode.isEmpty()){
+            Object[] electricityOperatorCode = getElectricityOperatorCode.get(0);
+            code = electricityOperatorCode[0].toString();
+        }
+        return code;
+    }
+
+    public String getDiscoCode(String id){
+        String code ="";
+        List<Object[]> getElectricityDiscoCode = sqlQueries.getElectricityDiscoCode(id);
+        if(!getElectricityDiscoCode.isEmpty()){
+            Object[] electricityOperatorCode = getElectricityDiscoCode.get(0);
+            code = electricityOperatorCode[0].toString();
+        }
+        return code;
     }
 }

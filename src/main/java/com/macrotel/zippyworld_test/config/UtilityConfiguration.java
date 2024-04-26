@@ -91,10 +91,17 @@ public class UtilityConfiguration {
     public String currencyFormat(String text){
         String removeComma = text.replaceAll(",", "");
         double value = Double.parseDouble(removeComma);
-
         DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
         return decimalFormat.format(value);
     }
+
+    public String numberFormat(String text){
+        String removeComma = text.replaceAll(",", "");
+        double value = Double.parseDouble(removeComma);
+        DecimalFormat decimalFormat = new DecimalFormat("#,##0");
+        return decimalFormat.format(value);
+    }
+
     public String removeComma(String value){
         return value.replaceAll(",","");
     }
@@ -140,6 +147,9 @@ public class UtilityConfiguration {
             operationValue = todayDate+this.randomAlphanumeric(2);
         } else if (Objects.equals(type,"AL")) {
             operationValue = todayDate+this.randomAlphabet(2);
+        }
+        else if (Objects.equals(type,"NOT")) {
+            operationValue = todayDate+this.randomDigit(3);
         }
         return operationValue;
     }
