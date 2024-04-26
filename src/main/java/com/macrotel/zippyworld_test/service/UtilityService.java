@@ -607,7 +607,6 @@ public class UtilityService {
     }
 
     public void aggregatorFunding(String operationId, String creditorId, String aggregatorCode, double amount, String serviceAccountNumber, String operationSummary){
-
     }
     public Boolean confirmSecurityAnswer(String customerId, String answer){
         boolean response = false;
@@ -783,7 +782,6 @@ public class UtilityService {
                             }
                         }
                         else{
-
                         }
                     }
                     else{
