@@ -34,9 +34,9 @@ public class ElectricityData {
     private String token;
     @NotEmpty(message = "Security Answer cannot be empty")
     private String security_answer;
-    private String provider;
     private String provider_ref;
     private String buyer_email;
     //    @NotEmpty(message = "Transaction ID cannot be empty")
     //    private String transaction_id;
+//    private String provider;
 }
