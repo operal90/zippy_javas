@@ -782,6 +782,20 @@ public class UtilityService {
                             }
                         }
                         else{
+                            if (commissionAmount > 0) {
+                                if (Objects.equals(commissionMode, "ACCUMULATE")) {
+                                    Object getCustomerCommissionWalletBalance = this.queryCustomerCommissionWalletBalance(customerId);
+                                    Map<String, String> customerCommissionWalletBalance = (Map<String, String>) getCustomerCommissionWalletBalance;
+                                    double commissionWalletBalance = Double.parseDouble(customerWalletBalance.get("amount")) + commissionAmount;
+                                    loggingService.accumulateCommissionFundingLogging(operationId, customerId, serviceCommissionAccountNumber, commissionWalletBalance, commissionAmount, commissionOperationSummary);
+                                } else {
+                                    buyerWalletBalance = buyerWalletBalance + commissionAmount;
+                                    loggingService.instanceCommissionFundingLogging(operationId, customerId, userTypeId, userPackageId, serviceCommissionAccountNumber, commissionAmount, buyerWalletBalance, commissionOperationSummary, "Electricity Service");
+                                }
+                            }
+                            if(Objects.equals(accountTypeId, "1")){
+                                token = electricityApiToken;
+                            }
                         }
                     }
                     else{
@@ -844,4 +858,5 @@ public class UtilityService {
         }
         return code;
     }
+
 }

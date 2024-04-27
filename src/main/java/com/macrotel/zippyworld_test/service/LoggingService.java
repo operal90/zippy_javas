@@ -31,6 +31,8 @@ public class LoggingService {
     CommissionTxnLogRepo commissionTxnLogRepo;
     @Autowired
     ElectricityTxnLogRepo electricityTxnLogRepo;
+    @Autowired
+    TextTbRepo textTbRepo;
 
 
     @Transactional
@@ -225,5 +227,12 @@ public class LoggingService {
         electricityTxnLogEntity.setResponseActualMessage(actualMsg);
         electricityTxnLogEntity = electricityTxnLogRepo.save(electricityTxnLogEntity);
         return electricityTxnLogEntity.getId();
+    }
+
+    public void insertIntoTextTb(String textA, String textB){
+        TextTbEntity textTbEntity = new TextTbEntity();
+        textTbEntity.setTextA(textA);
+        textTbEntity.setTextB(textB);
+        textTbRepo.save(textTbEntity);
     }
 }
