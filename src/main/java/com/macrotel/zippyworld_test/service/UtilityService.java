@@ -768,7 +768,7 @@ public class UtilityService {
                                 String reversalMessage = "Dear "+customerName +", "+electricityApiMessage+" .Thank you for using Zippyworld";
                                 result.put("statusCode", "1");
                                 result.put("message", reversalMessage);
-                                result.put("messageDetails" , electricityApiResponse);
+                                result.put("messageDetails" , electricityResponseMap);
                                 result.put("statusMessage", electricityApiStatusMessage);
                                 result.put("token", "");
                             }
@@ -777,7 +777,7 @@ public class UtilityService {
                                 result.put("statusCode", "1");
                                 result.put("message", reversalMessage);
                                 result.put("statusMessage", electricityApiStatusMessage);
-                                result.put("messageDetails" , electricityApiResponse);
+                                result.put("messageDetails" , electricityResponseMap);
                                 result.put("token", "");
                             }
                         }
@@ -795,8 +795,32 @@ public class UtilityService {
                             }
                             if(Objects.equals(accountTypeId, "1")){
                                 token = electricityApiToken;
+                                loggingService.insertIntoTextTb(operationId, token);
+                                String msg = "Dear "+customerName+", your transaction is successful and the power token is "+token+". Thanks for using Zippyworld";
+                                result.put("statusCode", "0");
+                                result.put("reference", operationId);
+                                result.put("message", msg);
+                                result.put("token", token);
+                                result.put("messageDetails", electricityResponseMap);
+                                result.put("statusMessage", "Successful");
+                                result.put("amount", "N"+amount);
+                                result.put("recipient", cardIdentity);
+                                result.put("recipientName", buyerName);
+                            }
+                            else{
+                                String msg = "Dear "+customerName+", your transaction is successful. Thanks for using Zippyworld";
+                                result.put("statusCode", "0");
+                                result.put("reference", operationId);
+                                result.put("message", "Transaction Successful");
+                                result.put("token", "");
+                                result.put("messageDetails", electricityResponseMap);
+                                result.put("statusMessage", "Successful");
+                                result.put("amount", "N"+amount);
+                                result.put("recipient", cardIdentity);
+                                result.put("recipientName", buyerName);
                             }
                         }
+                        //Call notification method
                     }
                     else{
                         result.put("statusCode", "1");
