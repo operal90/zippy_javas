@@ -1,5 +1,6 @@
 package com.macrotel.zippyworld_test.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
@@ -839,7 +840,6 @@ public class AppService {
 
                             }
                         }
-                        //Send Notification to user
                         baseResponse.setStatus_code(airtimePurchaseStatusCode);
                         baseResponse.setMessage(airtimePurchaseMessage);
                         baseResponse.setResult(getAirtimePurchaseResult);
@@ -1030,6 +1030,31 @@ public class AppService {
                         Object electricityPurchaseUtility = utilityService.electricityPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,
                                 cardIdentity,serviceAccountNo,serviceCommissionAccountNo,amount,commissionAmount,totalCharge,channel,accountTypeId,operatorId,providerRef,buyerPhoneNumber,
                                 buyerEmailAddress,provider,buyerName,customerAddress,"");
+
+                        Map<String, String> getElectricityPurchaseResult = (Map<String, String>) electricityPurchaseUtility;
+                        String electricityPurchaseStatusCode = getElectricityPurchaseResult.get("statusCode");
+                        String electricityPurchaseStatusMessage = getElectricityPurchaseResult.get("statusMessage");
+                        String electricityPurchaseMessage = getElectricityPurchaseResult.get("message");
+                        String electricityToken =  getElectricityPurchaseResult.get("token");
+                        String responseMessage = new ObjectMapper().writeValueAsString(getElectricityPurchaseResult);
+                        //Logging the transaction
+                        loggingService.electricityRequestUpdate(electricityToken, String.valueOf(responseId),responseMessage,electricityPurchaseStatusCode,electricityPurchaseMessage);
+                        //Update Transaction
+                        sqlQueries.updateTransactionStatus(customerId,operationId,electricityPurchaseStatusMessage);
+
+                        if(!Objects.equals(electricityPurchaseStatusCode,"1") && !Objects.equals(cafValue,"1")){
+                            Object getSettingValue = utilityService.getSettingValue("DEFAULT_AGGREGATOR_CODE");
+                            Map<String, String> settingValueMap = (Map<String, String>) getSettingValue;
+                            String settingValueResult = (String) settingValueMap.get("result");
+                            if((aggregatorCommissionAmount > 0) && (!Objects.equals(parentAggregatorCode,settingValueResult))){
+
+                            } else if (Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode,"BM")){
+
+                            }
+                        }
+                        baseResponse.setStatus_code(electricityPurchaseStatusCode);
+                        baseResponse.setMessage(electricityPurchaseMessage);
+                        baseResponse.setResult(getElectricityPurchaseResult);
                     }
                     catch (Exception ex){
                         double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
