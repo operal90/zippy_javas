@@ -1052,6 +1052,7 @@ public class AppService {
 
                             }
                         }
+                        getElectricityPurchaseResult.remove("messageDetails");
                         baseResponse.setStatus_code(electricityPurchaseStatusCode);
                         baseResponse.setMessage(electricityPurchaseMessage);
                         baseResponse.setResult(getElectricityPurchaseResult);

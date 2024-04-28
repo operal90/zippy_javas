@@ -63,31 +63,23 @@ public class ShagoConnect {
                  result.put("token", tokenMessage);
                  result.put("message", message);
                  result.put("statusMessage", "Successful");
-                 result.put("data", jsonData);
-                 result.put("apiResponse", apiResponse);
             } else if (Objects.equals(responseCode, "300")) {
                 result.put("statusCode", "1");
                 result.put("token", "");
                 result.put("message", message);
                 result.put("statusMessage", "Pending");
-                result.put("data", jsonData);
-                result.put("apiResponse", apiResponse);
             }
             else if (Objects.equals(responseCode, "400")) {
                 result.put("statusCode", "2");
                 result.put("token", "");
                 result.put("message", "Your electricity transaction of N"+formattedAmount+" is processing and taking longer than usual. Kindly check your transaction history in 5 minutes or you can reach out to the customer support");
                 result.put("statusMessage", "Pending");
-                result.put("data", jsonData);
-                result.put("apiResponse", apiResponse);
             }
             else if (Objects.equals(responseCode, "IP001")) {
                 result.put("statusCode", "2");
                 result.put("token", "");
                 result.put("message", "IP not whitelisted");
                 result.put("statusMessage", "Failed");
-                result.put("data", jsonData);
-                result.put("apiResponse", apiResponse);
             }
         }
         else{
@@ -95,8 +87,6 @@ public class ShagoConnect {
             result.put("token", "");
             result.put("message", "The Service is unavailable at the moment. Try again later");
             result.put("statusMessage", "Pending");
-            result.put("data", jsonData);
-            result.put("apiResponse", "The Service is unavailable at the moment. Try again later");
         }
         return result;
     }
