@@ -693,6 +693,41 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
+            //Get User Details and check user kyc level
+            UserAccountEntity userAccountEntity =  isCustomerExist.get();
+            String userKycLevel = userAccountEntity.getKycLevel();
+            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
+            String customerEmail = userAccountEntity.getEmail();
+            String userTypeId = userAccountEntity.getUserType();
+            String userPackageId = userAccountEntity.getUserPackageId();
+            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
+            String commissionMode = userAccountEntity.getCommissionMode();
+            String pndStatus = userAccountEntity.getPndStatus();
+
+            //Check if User is on Post No Debit
+            if(!Objects.equals("1", pndStatus)){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check User KYC Level
+            if(Objects.equals(userKycLevel,"0")){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("You are not allowed to perform this operation, Kindly Upgrade KYC or contact customer care.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user is on KYC Level 9
+            if(Objects.equals(userKycLevel,"9")){
+                if(amount > 5000){
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("You can only perform transaction below N5,000.00. Kindly Upgrade KYC or contact customer care");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
 
             //Check if user has done the same transaction before in the space of 5 minutes
             Optional<NetworkTxnLogEntity> isTransactionExist = networkTxnLogRepo.customerRecipientLastTransaction(customerId,recipient);
@@ -710,24 +745,7 @@ public class AppService {
                     return baseResponse;
                 }
             }
-            //Get User Details
-            UserAccountEntity userAccountEntity =  isCustomerExist.get();
-            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
-            String customerEmail = userAccountEntity.getEmail();
-            String userTypeId = userAccountEntity.getUserType();
-            String userPackageId = userAccountEntity.getUserPackageId();
-            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
-            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
-            String commissionMode = userAccountEntity.getCommissionMode();
-            String pndStatus = userAccountEntity.getPndStatus();
 
-            //Check if User is on Post No Debit
-            if(!Objects.equals("1", pndStatus)){
-                baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
-                baseResponse.setResult(EMPTY_RESULT);
-                return baseResponse;
-            }
             //Get Network Operator Service Code
             String networkServiceCode = airtimePurchaseData.getService_code();
             String networkOperatorCode = airtimePurchaseData.getNetwork_code();
@@ -935,14 +953,6 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
-            //Check previous transaction
-            int checkPreviousStatus = utilityService.checkPreviousTxnStatus(customerId, cardIdentity, ELECTRICITY_SERVICE_CODE);
-            if(checkPreviousStatus !=1){
-                baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("Please wait for 3 minutes before you can vend electricity to "+cardIdentity);
-                baseResponse.setResult(EMPTY_RESULT);
-                return baseResponse;
-            }
             //Get User Details
             UserAccountEntity userAccountEntity =  isCustomerExist.get();
             String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
@@ -953,6 +963,24 @@ public class AppService {
             String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
             String commissionMode = userAccountEntity.getCommissionMode();
             String pndStatus = userAccountEntity.getPndStatus();
+            String userKycLevel = userAccountEntity.getKycLevel();
+
+            //Check User KYC Level
+            if(Objects.equals(userKycLevel,"0")){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("You are not allowed to perform this operation, Kindly Upgrade KYC or contact customer care.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user is on KYC Level 9
+            if(Objects.equals(userKycLevel,"9")){
+                if(amount > 5000){
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("You can only perform transaction below N5,000.00. Kindly Upgrade KYC or contact customer care");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
 
             //Check if User is on Post No Debit
             if(!Objects.equals("1", pndStatus)){
@@ -961,6 +989,16 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
+
+            //Check previous transaction
+            int checkPreviousStatus = utilityService.checkPreviousTxnStatus(customerId, cardIdentity, ELECTRICITY_SERVICE_CODE);
+            if(checkPreviousStatus !=1){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Please wait for 3 minutes before you can vend electricity to "+cardIdentity);
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
 
             String serviceAccountNo = "1000000012";
             String serviceCommissionAccountNo = "1000000061";

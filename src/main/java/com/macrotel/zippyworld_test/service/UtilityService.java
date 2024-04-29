@@ -794,6 +794,7 @@ public class UtilityService {
                                 }
                             }
                             if(Objects.equals(accountTypeId, "1")){
+                                //PREPAID
                                 token = electricityApiToken;
                                 loggingService.insertIntoTextTb(operationId, token);
                                 String msg = "Dear "+customerName+", your transaction is successful and the power token is "+token+". Thanks for using Zippyworld";
@@ -808,6 +809,7 @@ public class UtilityService {
                                 result.put("recipientName", buyerName);
                             }
                             else{
+                                //POSTPAID
                                 String msg = "Dear "+customerName+", your transaction is successful. Thanks for using Zippyworld";
                                 result.put("statusCode", "0");
                                 result.put("reference", operationId);
