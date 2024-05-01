@@ -1139,6 +1139,8 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
+            //Stop and clear user last session
+
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

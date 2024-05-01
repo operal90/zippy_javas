@@ -23,84 +23,90 @@ public class ApplicationController {
     AppService appService;
 
     @GetMapping("/testing")
-    public ResponseEntity testing(){
+    public ResponseEntity<BaseResponse> testing(){
         BaseResponse baseResponse = appService.testing();
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/user_creation")
-    public ResponseEntity userAccountCreation(@Valid @RequestBody UserCreationData userCreationData){
+    public ResponseEntity<BaseResponse> userAccountCreation(@Valid @RequestBody UserCreationData userCreationData){
         BaseResponse baseResponse = appService.userCreation(userCreationData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
 
     @PostMapping("/create_identity_type")
-    public  ResponseEntity createIdentityType(@Valid @RequestBody IdentityData identityData){
+    public  ResponseEntity<BaseResponse> createIdentityType(@Valid @RequestBody IdentityData identityData){
         BaseResponse baseResponse = appService.createIdentityType(identityData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @GetMapping("/list_identity_type")
-    public  ResponseEntity listIdentityType(){
+    public  ResponseEntity<BaseResponse> listIdentityType(){
         BaseResponse baseResponse = appService.listIdentityType();
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @GetMapping("/list_security_question")
-    public  ResponseEntity listSecurityQuestion(){
+    public  ResponseEntity<BaseResponse> listSecurityQuestion(){
         BaseResponse baseResponse = appService.listSecurityQuestion();
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/verify_user_identity")
-    public  ResponseEntity verifyUserIdentity(@Valid @RequestBody VerifyUserIdentityData verifyUserIdentityData){
+    public  ResponseEntity<BaseResponse> verifyUserIdentity(@Valid @RequestBody VerifyUserIdentityData verifyUserIdentityData){
         BaseResponse baseResponse = appService.verifyUserIdentity(verifyUserIdentityData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
 
     @PostMapping("/generate_registration_otp")
-    public ResponseEntity generateRegistrationOtp(@Valid @RequestBody NotificationData notificationData){
+    public ResponseEntity<BaseResponse> generateRegistrationOtp(@Valid @RequestBody NotificationData notificationData){
         BaseResponse baseResponse = appService.generateRegistrationOTPCode(notificationData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @GetMapping("/verify_otp")
-    public ResponseEntity verifyOtp(@RequestParam("otp_code") String otpCode){
+    public ResponseEntity<BaseResponse> verifyOtp(@RequestParam("otp_code") String otpCode){
         BaseResponse baseResponse = appService.verifyOtpCode(otpCode);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/submit_customer_kyc")
-    public ResponseEntity submitCustomerKyc(@Valid @RequestBody SubmitKYCData upgradeKYCData){
+    public ResponseEntity<BaseResponse> submitCustomerKyc(@Valid @RequestBody SubmitKYCData upgradeKYCData){
         BaseResponse baseResponse = appService.submitCustomerKyc(upgradeKYCData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
 
     @GetMapping("/fetch_customer_kyc")
-    public ResponseEntity fetchUserKyc(@RequestParam("customerId") String customerId){
+    public ResponseEntity<BaseResponse> fetchUserKyc(@RequestParam("customerId") String customerId){
         BaseResponse baseResponse = appService.fetchCustomerKyC(customerId);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/upgrade_customer_kyc")
-    public ResponseEntity upgradeCustomerKyc(@Valid @RequestBody UpgradeKYCData upgradeKYCData){
+    public ResponseEntity<BaseResponse> upgradeCustomerKyc(@Valid @RequestBody UpgradeKYCData upgradeKYCData){
         BaseResponse baseResponse = appService.upgradeCustomerKyc(upgradeKYCData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
 
     @PostMapping("/airtime_purchase")
-    public ResponseEntity airtimePurchase(@Valid @RequestBody AirtimePurchaseData airtimePurchaseData){
+    public ResponseEntity<BaseResponse> airtimePurchase(@Valid @RequestBody AirtimePurchaseData airtimePurchaseData){
         BaseResponse baseResponse = appService.airtimePurchase(airtimePurchaseData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/electricity_vending")
-    public ResponseEntity electricityVending(@Valid @RequestBody ElectricityData electricityData){
+    public ResponseEntity<BaseResponse> electricityVending(@Valid @RequestBody ElectricityData electricityData){
         BaseResponse baseResponse = appService.electricityVending(electricityData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @PostMapping("/login")
+    public ResponseEntity<BaseResponse> userLogin(@Valid @RequestBody LoginData loginData){
+        BaseResponse baseResponse = appService.userLogin(loginData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }

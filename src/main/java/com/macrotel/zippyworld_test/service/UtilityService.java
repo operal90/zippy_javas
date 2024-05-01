@@ -5,13 +5,11 @@ import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.entity.MessageServiceEntity;
 import com.macrotel.zippyworld_test.entity.SettingEntity;
 import com.macrotel.zippyworld_test.entity.UserAccountEntity;
+import com.macrotel.zippyworld_test.entity.UserSessionEntity;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.ShagoConnect;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
-import com.macrotel.zippyworld_test.repo.MessageServiceRepo;
-import com.macrotel.zippyworld_test.repo.SettingRepo;
-import com.macrotel.zippyworld_test.repo.SqlQueries;
-import com.macrotel.zippyworld_test.repo.UserAccountRepo;
+import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +38,8 @@ public class UtilityService {
     UserAccountRepo userAccountRepo;
     @Autowired
     MessageServiceRepo messageServiceRepo;
+    @Autowired
+    UserSessionRepo userSessionRepo;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -892,6 +892,16 @@ public class UtilityService {
             response = true;
         }
         return response;
+    }
+
+    public void isSessionExist (String phoneNumber){
+        //Get User session
+        Optional<UserSessionEntity> getUserSession = userSessionRepo.findByCustomerId(phoneNumber);
+        if(getUserSession.isPresent()){
+            UserSessionEntity userSessionEntity = getUserSession.get();
+            //Delete the user session
+            userSessionRepo.delete(userSessionEntity);
+        }
     }
 
 }
