@@ -33,6 +33,8 @@ public class LoggingService {
     ElectricityTxnLogRepo electricityTxnLogRepo;
     @Autowired
     TextTbRepo textTbRepo;
+    @Autowired
+    RequestLoggingRepo requestLoggingRepo;
 
 
     @Transactional
@@ -234,5 +236,19 @@ public class LoggingService {
         textTbEntity.setTextA(textA);
         textTbEntity.setTextB(textB);
         textTbRepo.save(textTbEntity);
+    }
+
+    @Transactional
+    public Long requestLogging(String operation, String operationId, String transactionId, String requestParam, String status, String complexMsg, String actualMsg){
+        RequestLoggingEntity requestLoggingEntity = new RequestLoggingEntity();
+        requestLoggingEntity.setOperation(operation);
+        requestLoggingEntity.setOperationId(operationId);
+        requestLoggingEntity.setTxnId(transactionId);
+        requestLoggingEntity.setRequestParam(requestParam);
+        requestLoggingEntity.setStatus(status);
+        requestLoggingEntity.setResponseComplexMessage(complexMsg);
+        requestLoggingEntity.setResponseActualMessage(actualMsg);
+        requestLoggingEntity = requestLoggingRepo.save(requestLoggingEntity);
+        return requestLoggingEntity.getId();
     }
 }

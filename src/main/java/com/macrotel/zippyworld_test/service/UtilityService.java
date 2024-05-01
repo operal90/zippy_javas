@@ -904,4 +904,24 @@ public class UtilityService {
         }
     }
 
+    public Integer loginCounter(String phoneNumber){
+        int count = 0;
+        List<Object[]> getUserLoginCount = sqlQueries.countLoginTracker(phoneNumber);
+        if(!getUserLoginCount.isEmpty()){
+           Object[] userLoginCount = getUserLoginCount.get(0);
+            count = Integer.parseInt(userLoginCount[0].toString());
+        }
+        return count;
+    }
+
+    public String userAccountStatus (String phoneNumber){
+        String userStatus = "";
+        Optional<UserAccountEntity> getUserData = userAccountRepo.findByPhonenumber(phoneNumber);
+        if(getUserData.isPresent()){
+            UserAccountEntity userAccountEntity = getUserData.get();
+            userStatus = userAccountEntity.getStatus();
+        }
+        return userStatus;
+    }
+
 }

@@ -1132,7 +1132,8 @@ public class AppService {
     public BaseResponse userLogin(LoginData loginData){
         try{
             //Check if phoneNumber is unique;
-            boolean isPhoneNumberUnique = utilityService.isPhoneNumberUnique(loginData.getPhonenumber());
+            String userPhoneNumber = loginData.getPhonenumber();
+            boolean isPhoneNumberUnique = utilityService.isPhoneNumberUnique(userPhoneNumber);
             if(!isPhoneNumberUnique){
                 baseResponse.setStatus_code("1");
                 baseResponse.setMessage("Phone number does not exist. Kindly sign up");
@@ -1140,6 +1141,21 @@ public class AppService {
                 return baseResponse;
             }
             //Stop and clear user last session
+            utilityService.isSessionExist(userPhoneNumber);
+            //Check if user account is not locked
+            int userLoginCounter = utilityService.loginCounter(userPhoneNumber);
+            String userStatus = utilityService.userAccountStatus(userPhoneNumber);
+            if(userLoginCounter >=5 || !Objects.equals(userStatus,"0")){
+                baseResponse.setStatus_code("1");
+                baseResponse.setMessage("Dear Customer, Your Account has been locked. Kindly contact the customer care");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            String val = utilities.shaEncryption(userPhoneNumber+"|"+System.currentTimeMillis());
+            String transactionId = "I-"+userPhoneNumber+"-"+utilities.randomDigit(18);
+            String operationId = utilities.getOperationId("NU");
+            //Log the request
+            Long responseId = loggingService.requestLogging("login",operationId,transactionId,val,"2","incoming","");
 
         }
         catch (Exception ex){
