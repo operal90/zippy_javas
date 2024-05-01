@@ -15,4 +15,7 @@ public interface UserAccountRepo extends JpaRepository<UserAccountEntity, Long> 
 
     @Query(value = "SELECT u FROM UserAccountEntity u WHERE u.phonenumber =:phoneNumber AND u.answer =:securityAnswer")
     Optional<UserAccountEntity> confirmSecurityAnswer(@Param("phoneNumber") String phoneNumber, @Param("securityAnswer") String securityAnswer);
+
+    @Query(value ="SELECT u FROM UserAccountEntity u WHERE u.phonenumber =:phoneNumber")
+    Optional<UserAccountEntity> getUserAccountDetails(@Param("phoneNumber") String phoneNumber);
 }

@@ -715,7 +715,7 @@ public class AppService {
             //Check User KYC Level
             if(Objects.equals(userKycLevel,"0")){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("You are not allowed to perform this operation, Kindly Upgrade KYC or contact customer care.");
+                baseResponse.setMessage("You can not perform this transaction due to your KYC. Kindly upgrade your KYC or contact the customer support.");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
@@ -723,7 +723,7 @@ public class AppService {
             if(Objects.equals(userKycLevel,"9")){
                 if(amount > 5000){
                     baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                    baseResponse.setMessage("You can only perform transaction below N5,000.00. Kindly Upgrade KYC or contact customer care");
+                    baseResponse.setMessage("You can not perform this transaction due to your KYC limit. Kindly upgrade your KYC to perform transaction above N5,000 or contact the customer support");
                     baseResponse.setResult(EMPTY_RESULT);
                     return baseResponse;
                 }
@@ -764,6 +764,7 @@ public class AppService {
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
+
             //Network Provider Details
             Object[] networkOperatorServiceCode =getNetworkOperatorServiceCode.get(0);
             String provider = networkOperatorServiceCode[4].toString();
@@ -817,6 +818,7 @@ public class AppService {
                 else {
                     Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNumber,userTypeId,userPackageId);
                     Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                    System.out.println(servicecommissionMap);
                     commissionAmount = servicecommissionMap.get("commissionUser");
                     aggregatorCommissionAmount =servicecommissionMap.get("commissionMaster");
                 }
@@ -824,7 +826,6 @@ public class AppService {
                 //check if user's aggregator can get commission
                 cafValue = utilityService.checkAggregatorFund(customerId);
             }
-
             double totalCharge = utilities.formattedAmount(String.valueOf(amount-totalCommission));
             String operationSummary = description + " of " + totalCharge;
             //Save the Network log and get the Id
@@ -968,7 +969,7 @@ public class AppService {
             //Check User KYC Level
             if(Objects.equals(userKycLevel,"0")){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                baseResponse.setMessage("You are not allowed to perform this operation, Kindly Upgrade KYC or contact customer care.");
+                baseResponse.setMessage("You can not perform this transaction due to your KYC. Kindly upgrade your KYC or contact the customer support.");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }
@@ -976,7 +977,7 @@ public class AppService {
             if(Objects.equals(userKycLevel,"9")){
                 if(amount > 5000){
                     baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                    baseResponse.setMessage("You can only perform transaction below N5,000.00. Kindly Upgrade KYC or contact customer care");
+                    baseResponse.setMessage("You can not perform this transaction due to your KYC limit. Kindly upgrade your KYC to perform transaction above N5,000 or contact the customer support");
                     baseResponse.setResult(EMPTY_RESULT);
                     return baseResponse;
                 }
@@ -1118,6 +1119,23 @@ public class AppService {
                         totalCharge,cardIdentity,operatorId,accountTypeId,provider,params,"3",String.valueOf(responseId),"Unsuccessful");
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
                 baseResponse.setMessage(String.valueOf(responseId));
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse userLogin(LoginData loginData){
+        try{
+            //Check if phoneNumber is unique;
+            boolean isPhoneNumberUnique = utilityService.isPhoneNumberUnique(loginData.getPhonenumber());
+            if(!isPhoneNumberUnique){
+                baseResponse.setStatus_code("1");
+                baseResponse.setMessage("Phone number does not exist. Kindly sign up");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }

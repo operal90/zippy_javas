@@ -885,4 +885,13 @@ public class UtilityService {
         return code;
     }
 
+    public Boolean isPhoneNumberUnique(String phoneNumber){
+        boolean response = false;
+        Optional<UserAccountEntity> isUserAccountExist = userAccountRepo.getUserAccountDetails(phoneNumber);
+        if(isUserAccountExist.isPresent()){
+            response = true;
+        }
+        return response;
+    }
+
 }
