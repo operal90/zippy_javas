@@ -2,6 +2,7 @@ package com.macrotel.zippyworld_test.service;
 
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
+import com.macrotel.zippyworld_test.dto.MessageServiceDTO;
 import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.ShagoConnect;
@@ -963,6 +964,45 @@ public class UtilityService {
         return token;
     }
 
+    public String isSoftPosUsedSuccessful(String customerId){
+        String response = "1";
+        List<Object[]> getCustomerSettlementCount = sqlQueries.countSoftPosSuccessful(customerId);
+        if(!getCustomerSettlementCount.isEmpty()){
+            Object[] userCountResult = getCustomerSettlementCount.get(0);
+            int count = Integer.parseInt(userCountResult[0].toString());
+            if(count > 0){
+                response = "0";
+            }
+        }
+        return response;
+    }
+
+    public String isTaxCollector(String customerId){
+        String response = "1";
+        List<Object[]> getUserTaxCollectorCount = sqlQueries.isTaxCollector(customerId);
+        if(!getUserTaxCollectorCount.isEmpty()){
+            Object[] userCountResult = getUserTaxCollectorCount.get(0);
+            int count = Integer.parseInt(userCountResult[0].toString());
+            if(count > 0){
+                response = "0";
+            }
+        }
+        return response;
+    }
+
+    public String isPosKeyPadUser(String customerId){
+        String response = "1";
+        List<Object[]> getUserKeyPadPosCount = sqlQueries.isPosKeyPadUser(customerId);
+        if(!getUserKeyPadPosCount.isEmpty()){
+            Object[] userCountResult = getUserKeyPadPosCount.get(0);
+            int count = Integer.parseInt(userCountResult[0].toString());
+            if(count > 0){
+                response = "0";
+            }
+        }
+        return response;
+    }
+
     public Object customerLogin(String customerId, String pin){
         HashMap<String, Object> result = new HashMap<>();
         pin = utilityConfiguration.shaEncryption(pin);
@@ -991,13 +1031,23 @@ public class UtilityService {
             if(counter > 0){
                 this.loginCounterDelete(customerId);
             }
+            //Get User POS Data if user is a POS Agent, Get if user is a Tax collector, Get if user is a KeypadPOS user, Get the messageService User Subscribe for
+            MessageServiceDTO messageServiceDTO = new MessageServiceDTO();
+            Optional<MessageServiceEntity> getUserMessageSubscribe = messageServiceRepo.findByCustomerId(customerId);
+            if(getUserMessageSubscribe.isPresent()){
+                MessageServiceEntity messageServiceEntity = getUserMessageSubscribe.get();
+                messageServiceDTO = dtoService.messageServiceDTO(messageServiceEntity);
+            }
             //Generate session token
             String sessionToken = this.generateSessionToken(customerId,pin);
             result.put("statusCode","0");
             result.put("message", "Login Successfully");
             result.put("token", sessionToken);
             result.put("user_detail", dtoService.userAccountDTO(userAccountEntity));
-
+            result.put("softpos_used_status", this.isSoftPosUsedSuccessful(customerId));
+            result.put("is_tax_collector", this.isTaxCollector(customerId));
+            result.put("is_pos_keypad_user", this.isPosKeyPadUser(customerId));
+            result.put("message_detail", messageServiceDTO);
         }
         return result;
     }

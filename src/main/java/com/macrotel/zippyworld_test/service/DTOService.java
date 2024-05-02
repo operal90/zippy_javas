@@ -1,6 +1,8 @@
 package com.macrotel.zippyworld_test.service;
 
+import com.macrotel.zippyworld_test.dto.MessageServiceDTO;
 import com.macrotel.zippyworld_test.dto.UserAccountDTO;
+import com.macrotel.zippyworld_test.entity.MessageServiceEntity;
 import com.macrotel.zippyworld_test.entity.UserAccountEntity;
 import org.springframework.stereotype.Service;
 
@@ -22,12 +24,20 @@ public class DTOService {
         userAccountDTO.setIdentityNumber(userAccountEntity.getIdentityNumber());
         userAccountDTO.setIdentity_verify_status(userAccountEntity.getIdentityVerifyStatus());
         userAccountDTO.setAccount_no(userAccountEntity.getAccountNo());
-        userAccountDTO.setGtb_account_no(userAccountEntity.getGtbAccountNo().isEmpty() ? "0" : userAccountEntity.getGtbAccountNo());
-        userAccountDTO.setWtl_status(userAccountEntity.getWtlStatus().isEmpty() ? "2" :  userAccountEntity.getWtlStatus());
+        userAccountDTO.setGtb_account_no(userAccountEntity.getGtbAccountNo()==null ? "0" : userAccountEntity.getGtbAccountNo());
+        userAccountDTO.setWtl_status(userAccountEntity.getWtlStatus()==null ? "2" :  userAccountEntity.getWtlStatus());
         userAccountDTO.setAddress(userAccountEntity.getAddress());
-        userAccountDTO.setWtl_user_type(userAccountEntity.getWtlStatus().isEmpty() ? "2" :  userAccountEntity.getWtlStatus());
+        userAccountDTO.setWtl_user_type(userAccountEntity.getWtlStatus()==null ? "2" :  userAccountEntity.getWtlStatus());
         userAccountDTO.setPromo_code(userAccountEntity.getPromoCode());
         userAccountDTO.setReferrer_code(userAccountEntity.getReferrerCode());
         return userAccountDTO;
+    }
+
+    public MessageServiceDTO messageServiceDTO(MessageServiceEntity messageServiceEntity){
+        MessageServiceDTO messageServiceDTO = new MessageServiceDTO();
+        messageServiceDTO.setEmail(messageServiceEntity.getEmail() ==null ? "1" :messageServiceEntity.getEmail());
+        messageServiceDTO.setSms(messageServiceEntity.getSms() ==null? "1" : messageServiceEntity.getSms());
+        messageServiceDTO.setWhatsapp(messageServiceEntity.getWhatsapp() ==null ?"1" :messageServiceEntity.getWhatsapp());
+        return messageServiceDTO;
     }
 }

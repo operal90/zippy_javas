@@ -94,4 +94,13 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT COUNT(id) cnt FROM login_trackers WHERE customer_id =:customerId", nativeQuery = true)
     List<Object[]> countLoginTracker(@Param("customerId") String customerId);
 
+    @Query(value = "SELECT COUNT(id) cnt FROM gtb_settlement_notifications WHERE customer_id =:customerId AND creditted_status = '0'", nativeQuery = true)
+    List<Object[]> countSoftPosSuccessful(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT COUNT(id) cnt FROM tax_user_whitelists WHERE customer_id =:customerId AND status = '0'", nativeQuery = true)
+    List<Object[]> isTaxCollector(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT COUNT(id) cnt FROM pos_whitelists WHERE customer_id =:customerId AND pos_type = 'MOREFUN-KEYPAD01'", nativeQuery = true)
+    List<Object[]> isPosKeyPadUser(@Param("customerId") String customerId);
+
 }
