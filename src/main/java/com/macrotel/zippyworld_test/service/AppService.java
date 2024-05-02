@@ -1157,6 +1157,17 @@ public class AppService {
             Long responseId = loggingService.requestLogging("login",operationId,"I-"+transactionId,val,"2","incoming","");
             if(responseId > 0){
                 Object getUserLogin = utilityService.customerLogin(userPhoneNumber, loginData.getPin());
+                Map<String, String> userLoginResponse = (Map<String,String>)getUserLogin;
+                String userLoginStatusCode = userLoginResponse.get("statusCode");
+                String userLoginMessage = userLoginResponse.get("message");
+                //Remove the message and statusCode
+                userLoginResponse.remove("statusCode");
+                userLoginResponse.remove("message");
+
+                baseResponse.setStatus_code(userLoginStatusCode);
+                baseResponse.setMessage(userLoginMessage);
+                baseResponse.setResult(userLoginResponse);
+
             }
             else{
                 loggingService.requestLogging("login",operationId,"C-"+transactionId,val,"1",String.valueOf(responseId),"");

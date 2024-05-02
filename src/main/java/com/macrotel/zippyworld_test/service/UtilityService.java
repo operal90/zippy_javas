@@ -39,6 +39,8 @@ public class UtilityService {
     UserSessionRepo userSessionRepo;
     @Autowired
     LoginTrackerRepo loginTrackerRepo;
+    @Autowired
+    DTOService dtoService;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -949,13 +951,24 @@ public class UtilityService {
         return userStatus;
     }
 
+    public String generateSessionToken(String customerId, String pin){
+        String token="";
+        String randomNumber =  utilityConfiguration.randomAlphanumeric(15);
+        token = utilityConfiguration.shaEncryption(customerId+pin+randomNumber);
+        //Save Session Token
+        UserSessionEntity userSessionEntity = new UserSessionEntity();
+        userSessionEntity.setCustomerId(customerId);
+        userSessionEntity.setToken(token);
+        userSessionRepo.save(userSessionEntity);
+        return token;
+    }
+
     public Object customerLogin(String customerId, String pin){
         HashMap<String, Object> result = new HashMap<>();
         pin = utilityConfiguration.shaEncryption(pin);
         int counter = this.loginTracker(customerId);
 
         Optional<UserAccountEntity> authenticateUser = userAccountRepo.authenticateUser(customerId,pin);
-        System.out.println(authenticateUser);
         if(authenticateUser.isEmpty()){
             if(counter > 2){
                 int times = 3 - counter;
@@ -974,9 +987,16 @@ public class UtilityService {
             }
         }
         else{
+            UserAccountEntity userAccountEntity = authenticateUser.get();
             if(counter > 0){
                 this.loginCounterDelete(customerId);
             }
+            //Generate session token
+            String sessionToken = this.generateSessionToken(customerId,pin);
+            result.put("statusCode","0");
+            result.put("message", "Login Successfully");
+            result.put("token", sessionToken);
+            result.put("user_detail", dtoService.userAccountDTO(userAccountEntity));
 
         }
         return result;

@@ -39,6 +39,12 @@ public class UserAccountEntity implements Serializable {
     private String userPackageId;
     private String agreed;
     private String commissionMode;
+    private String isTaxCollector;
+    private String bvnVerificationStatus;
+    private String identityVerifyStatus;
+    private String gtbAccountNo;
+    private String address;
+    private String bvn;
     private String registeredAt;
     private String accountName;
     private String identityPhonenumber;
