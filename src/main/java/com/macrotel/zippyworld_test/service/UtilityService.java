@@ -2,10 +2,7 @@ package com.macrotel.zippyworld_test.service;
 
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
-import com.macrotel.zippyworld_test.entity.MessageServiceEntity;
-import com.macrotel.zippyworld_test.entity.SettingEntity;
-import com.macrotel.zippyworld_test.entity.UserAccountEntity;
-import com.macrotel.zippyworld_test.entity.UserSessionEntity;
+import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.ShagoConnect;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
@@ -40,6 +37,8 @@ public class UtilityService {
     MessageServiceRepo messageServiceRepo;
     @Autowired
     UserSessionRepo userSessionRepo;
+    @Autowired
+    LoginTrackerRepo loginTrackerRepo;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -894,9 +893,9 @@ public class UtilityService {
         return response;
     }
 
-    public void isSessionExist (String phoneNumber){
+    public void isSessionExist (String customerId){
         //Get User session
-        Optional<UserSessionEntity> getUserSession = userSessionRepo.findByCustomerId(phoneNumber);
+        Optional<UserSessionEntity> getUserSession = userSessionRepo.findByCustomerId(customerId);
         if(getUserSession.isPresent()){
             UserSessionEntity userSessionEntity = getUserSession.get();
             //Delete the user session
@@ -904,9 +903,9 @@ public class UtilityService {
         }
     }
 
-    public Integer loginCounter(String phoneNumber){
+    public Integer loginCounter(String customerId){
         int count = 0;
-        List<Object[]> getUserLoginCount = sqlQueries.countLoginTracker(phoneNumber);
+        List<Object[]> getUserLoginCount = sqlQueries.countLoginTracker(customerId);
         if(!getUserLoginCount.isEmpty()){
            Object[] userLoginCount = getUserLoginCount.get(0);
             count = Integer.parseInt(userLoginCount[0].toString());
@@ -914,9 +913,35 @@ public class UtilityService {
         return count;
     }
 
-    public String userAccountStatus (String phoneNumber){
+    public void loginCounterDelete(String customerId){
+        loginTrackerRepo.deleteByCustomerId(customerId);
+    }
+
+    public Integer loginTracker(String customerId){
+        int counter = 0;
+        //Insert into LoginTracker Db
+        LoginTrackerEntity loginTrackerEntity = new LoginTrackerEntity();
+        loginTrackerEntity.setCustomerId(customerId);
+        loginTrackerEntity.setTryCount(1);
+        loginTrackerRepo.save(loginTrackerEntity);
+
+        //Get user LoginCounter;
+        counter = this.loginCounter(customerId);
+        if(counter >= 5){
+            //Update user account and set it status to 1
+            Optional<UserAccountEntity> getUserAccountDetails = userAccountRepo.findByPhonenumber(customerId);
+            if(getUserAccountDetails.isPresent()){
+                UserAccountEntity userAccountEntity = getUserAccountDetails.get();
+                userAccountEntity.setStatus("1");
+                userAccountRepo.save(userAccountEntity);
+            }
+        }
+        return counter;
+    }
+
+    public String userAccountStatus (String customerId){
         String userStatus = "";
-        Optional<UserAccountEntity> getUserData = userAccountRepo.findByPhonenumber(phoneNumber);
+        Optional<UserAccountEntity> getUserData = userAccountRepo.findByPhonenumber(customerId);
         if(getUserData.isPresent()){
             UserAccountEntity userAccountEntity = getUserData.get();
             userStatus = userAccountEntity.getStatus();
@@ -924,4 +949,36 @@ public class UtilityService {
         return userStatus;
     }
 
+    public Object customerLogin(String customerId, String pin){
+        HashMap<String, Object> result = new HashMap<>();
+        pin = utilityConfiguration.shaEncryption(pin);
+        int counter = this.loginTracker(customerId);
+
+        Optional<UserAccountEntity> authenticateUser = userAccountRepo.authenticateUser(customerId,pin);
+        System.out.println(authenticateUser);
+        if(authenticateUser.isEmpty()){
+            if(counter > 2){
+                int times = 3 - counter;
+                if(times ==0){
+                    result.put("statusCode", "1");
+                    result.put("message", "Your Account is locked");
+                }
+                else{
+                    result.put("statusCode", "1");
+                    result.put("message", "Your account will be locked after "+times+" more trial");
+                }
+            }
+            else{
+                result.put("statusCode", "1");
+                result.put("message","Phone number or Password is not correct");
+            }
+        }
+        else{
+            if(counter > 0){
+                this.loginCounterDelete(customerId);
+            }
+
+        }
+        return result;
+    }
 }

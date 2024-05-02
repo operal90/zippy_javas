@@ -63,7 +63,6 @@ public class AppService {
     NetworkTxnLogRepo networkTxnLogRepo;
     @Autowired
     SqlQueries sqlQueries;
-
     public AppService(UtilityService utilityService, LoggingService loggingService) {
         this.utilityService = utilityService;
         this.loggingService = loggingService;
@@ -1152,11 +1151,19 @@ public class AppService {
                 return baseResponse;
             }
             String val = utilities.shaEncryption(userPhoneNumber+"|"+System.currentTimeMillis());
-            String transactionId = "I-"+userPhoneNumber+"-"+utilities.randomDigit(18);
+            String transactionId = userPhoneNumber+"-"+utilities.randomDigit(18);
             String operationId = utilities.getOperationId("NU");
             //Log the request
-            Long responseId = loggingService.requestLogging("login",operationId,transactionId,val,"2","incoming","");
-
+            Long responseId = loggingService.requestLogging("login",operationId,"I-"+transactionId,val,"2","incoming","");
+            if(responseId > 0){
+                Object getUserLogin = utilityService.customerLogin(userPhoneNumber, loginData.getPin());
+            }
+            else{
+                loggingService.requestLogging("login",operationId,"C-"+transactionId,val,"1",String.valueOf(responseId),"");
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Login Error, Try Again later");
+                baseResponse.setResult(EMPTY_RESULT);
+            }
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
