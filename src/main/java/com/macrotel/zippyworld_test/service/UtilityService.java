@@ -218,25 +218,29 @@ public class UtilityService {
         HashMap<String, Double> result = new HashMap<>();
         double commissionUser = 0.0;
         double commissionMaster = 0.0;
-        List<Object[]> getCustomerCommission = sqlQueries.getCustomerCommissionDetail(serviceAccountNumber,userTypeId,userPackageId);
-        Object[] customerCommission = getCustomerCommission.get(0);
-        String cmt = customerCommission[0].toString();
-        double cmp = (customerCommission[1] != null && !customerCommission[1].toString().isEmpty()) ? Double.parseDouble(customerCommission[1].toString()) : 0.0;
-        double csc = (customerCommission[2] != null && !customerCommission[2].toString().isEmpty()) ? Double.parseDouble(customerCommission[2].toString()) : 0.0;
-        double msv = (customerCommission[3] != null && !customerCommission[3].toString().isEmpty()) ? Double.parseDouble(customerCommission[3].toString()) : 0.0;
 
-        if(Objects.equals(cmt,"PT")){
-            commissionUser = (amount * cmp) /100;
-            commissionMaster = (msv > 0) ? (amount * msv)/100 : msv;
-        }
-        else {
-            commissionUser = csc;
-            commissionMaster = msv;
+        List<Object[]> getCustomerCommission = sqlQueries.getCustomerCommissionDetail(serviceAccountNumber,userTypeId,userPackageId);
+        if(!getCustomerCommission.isEmpty()){
+            Object[] customerCommission = getCustomerCommission.get(0);
+            String cmt = (customerCommission.length > 0 && customerCommission[0] != null) ? customerCommission[0].toString() : "";
+            double cmp = (customerCommission[1] != null && !customerCommission[1].toString().isEmpty()) ? Double.parseDouble(customerCommission[1].toString()) : 0.0;
+            double csc = (customerCommission[2] != null && !customerCommission[2].toString().isEmpty()) ? Double.parseDouble(customerCommission[2].toString()) : 0.0;
+            double msv = (customerCommission[3] != null && !customerCommission[3].toString().isEmpty()) ? Double.parseDouble(customerCommission[3].toString()) : 0.0;
+
+            if(Objects.equals(cmt,"PT")){
+                commissionUser = (amount * cmp) /100;
+                commissionMaster = (msv > 0) ? (amount * msv)/100 : msv;
+            }
+            else {
+                commissionUser = csc;
+                commissionMaster = msv;
+            }
         }
         result.put("commissionUser", commissionUser);
         result.put("commissionMaster", commissionMaster);
         return result;
     }
+
     private void setResultValues(Map<String, String> result, Object[] promoCommissionQuery) {
         result.put("statusCode", "0");
         result.put("cmt", promoCommissionQuery[8].toString());

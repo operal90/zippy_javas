@@ -779,6 +779,7 @@ public class AppService {
             double totalCommission = 0;
             double commissionAmount = 0;
             double aggregatorCommissionAmount = 0;
+
             if(Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode, "BM")){
                 cafValue = 0;
                 //Get User Commission Value
@@ -817,7 +818,6 @@ public class AppService {
                 else {
                     Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNumber,userTypeId,userPackageId);
                     Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
-                    System.out.println(servicecommissionMap);
                     commissionAmount = servicecommissionMap.get("commissionUser");
                     aggregatorCommissionAmount =servicecommissionMap.get("commissionMaster");
                 }
