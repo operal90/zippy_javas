@@ -366,7 +366,7 @@ public class UtilityService {
                         operationSummary = "Reversal of " + operationSummary;
                         loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,formattedAmount);
                         this.reversalOperation(reversalId,customerId,userTypeId,userPackageId,amount,channel,serviceAccountNumber,operationSummary);
-                        String message ="Dear "+customerName+", your recharge of N"+formattedAmount+" is pending/successful. Kindly confirm the status from CUSTOMER SERVICE before retry. Thank you for using Zippyworld";
+                        String message ="Dear "+customerName+", your recharge of N"+formattedAmount+" failed and it has been auto reversed. Kindly retry. Thank you for using Zippyworld";
                         result.put("statusCode", "0");
                         result.put("message", message);
                         result.put("statusMessage", "Pending");
@@ -534,10 +534,36 @@ public class UtilityService {
             else{
                 response.put("statusCode", "2");
                 response.put("amount", String.valueOf(walletBalance));
-                response.put("message", "Successful");
+                response.put("message", "Concurrent Operation");
             }
         }
         return response;
+    }
+    public Object queryQrCustomerWalletBalance(String customerId){
+        HashMap<String, String> result = new HashMap<>();
+        String currentDate= LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        result.put("status_code","1");
+        result.put("message","Unable to get Wallet Balance");
+        result.put("amount", "");
+        //Query qr wallet balance
+        List<Object[]> getCustomerQrBalance = sqlQueries.getCustomerQrBalance(customerId);
+        if(!getCustomerQrBalance.isEmpty()){
+            Object[] customerQrWalletBalance = getCustomerQrBalance.get(0);
+            String walletBalance = customerQrWalletBalance[0].toString();
+            String operationAt = customerQrWalletBalance[1].toString();
+
+            if(!Objects.equals(currentDate,operationAt)){
+                result.put("status_code", "0");
+                result.put("amount", walletBalance);
+                result.put("message", "Successful");
+            }
+            else{
+                result.put("status_code", "2");
+                result.put("amount", walletBalance);
+                result.put("message", "Concurrent Operation");
+            }
+        }
+        return  result;
     }
 
     public Object queryCustomerCommissionWalletBalance(String customerId){
@@ -576,6 +602,20 @@ public class UtilityService {
             amount = Double.parseDouble(serviceWalletBalance[0].toString());
         }
         return amount;
+    }
+
+    public Object queryCustomerCommissionEarned(String customerId){
+        HashMap<String, String> result = new HashMap<>();
+        String amount = "0";
+        List<Object[]> getCustomerCommissionEarned = sqlQueries.getCustomerCommissionEarned(customerId);
+        if(!getCustomerCommissionEarned.isEmpty()){
+            Object[] customerCommission = getCustomerCommissionEarned.get(0);
+            amount= customerCommission[0].toString();
+        }
+        result.put("status_code", "0");
+        result.put("message","Successful");
+        result.put("amount", amount);
+        return result;
     }
 
     public void reversalOperation(String operationId, String customerId, String userTypeId, String userPackageId, double amount, String channel, String serviceAccountNumber, String operationSummary){
@@ -1007,6 +1047,7 @@ public class UtilityService {
         return response;
     }
 
+
     public Object customerLogin(String customerId, String pin){
         HashMap<String, Object> result = new HashMap<>();
         pin = utilityConfiguration.shaEncryption(pin);
@@ -1015,10 +1056,10 @@ public class UtilityService {
         Optional<UserAccountEntity> authenticateUser = userAccountRepo.authenticateUser(customerId,pin);
         if(authenticateUser.isEmpty()){
             if(counter > 2){
-                int times = 3 - counter;
+                int times = 5 - counter;
                 if(times ==0){
                     result.put("statusCode", "1");
-                    result.put("message", "Your Account is locked");
+                    result.put("message", "Your Account is locked, Kindly contact customer care on 09020195199 or Email at Zippyworld@macrotelgroup.com ");
                 }
                 else{
                     result.put("statusCode", "1");
@@ -1036,6 +1077,7 @@ public class UtilityService {
                 this.loginCounterDelete(customerId);
             }
             //Get User POS Data if user is a POS Agent, Get if user is a Tax collector, Get if user is a KeypadPOS user, Get the messageService User Subscribe for
+            //Get customer QRWallet Balance, commisionWalletBalance , wallet balance and commission earned
             MessageServiceDTO messageServiceDTO = new MessageServiceDTO();
             Optional<MessageServiceEntity> getUserMessageSubscribe = messageServiceRepo.findByCustomerId(customerId);
             if(getUserMessageSubscribe.isPresent()){
@@ -1052,6 +1094,10 @@ public class UtilityService {
             result.put("is_tax_collector", this.isTaxCollector(customerId));
             result.put("is_pos_keypad_user", this.isPosKeyPadUser(customerId));
             result.put("message_detail", messageServiceDTO);
+            result.put("qr_customer_wallet_balance", this.queryQrCustomerWalletBalance(customerId));
+            result.put("customer_commission_wallet_balance", this.queryCustomerCommissionWalletBalance(customerId));
+            result.put("customer_wallet_balance", this.queryCustomerWalletBalance(customerId));
+            result.put("commission_earned", this.queryCustomerCommissionEarned(customerId));
         }
         return result;
     }

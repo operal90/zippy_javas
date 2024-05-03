@@ -1146,7 +1146,7 @@ public class AppService {
             String userStatus = utilityService.userAccountStatus(userPhoneNumber);
             if(userLoginCounter >=5 || !Objects.equals(userStatus,"0")){
                 baseResponse.setStatus_code("1");
-                baseResponse.setMessage("Dear Customer, Your Account has been locked. Kindly contact the customer care");
+                baseResponse.setMessage("Dear Customer, Your Account has been locked. Kindly contact customer care on 09020195199 or Email at Zippyworld@macrotelgroup.com ");
                 baseResponse.setResult(EMPTY_RESULT);
                 return baseResponse;
             }

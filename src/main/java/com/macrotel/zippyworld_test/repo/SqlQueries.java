@@ -103,4 +103,10 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT COUNT(id) cnt FROM pos_whitelists WHERE customer_id =:customerId AND pos_type = 'MOREFUN-KEYPAD01'", nativeQuery = true)
     List<Object[]> isPosKeyPadUser(@Param("customerId") String customerId);
 
+    @Query(value = "SELECT wallet_balance, operation_at FROM qr_customer_wallets WHERE customer_id =:customerId ORDER BY id DESC LIMIT 1", nativeQuery = true)
+    List<Object[]> getCustomerQrBalance(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT IFNULL(FORMAT(SUM(commision_charge),2),0) amt FROM customer_wallets WHERE commision_type = 'PT' " +
+                    "  AND customer_id =:customerId AND MONTH(operation_at)= MONTH(NOW()) AND YEAR(operation_at) = YEAR(NOW())", nativeQuery = true)
+    List<Object[]> getCustomerCommissionEarned(@Param("customerId") String customerId);
 }
