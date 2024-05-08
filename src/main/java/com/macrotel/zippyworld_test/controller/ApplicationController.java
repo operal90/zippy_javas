@@ -3,6 +3,7 @@ package com.macrotel.zippyworld_test.controller;
 import com.macrotel.zippyworld_test.pojo.*;
 import com.macrotel.zippyworld_test.service.AppService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -107,6 +108,12 @@ public class ApplicationController {
     @PostMapping("/login")
     public ResponseEntity<BaseResponse> userLogin(@Valid @RequestBody LoginData loginData){
         BaseResponse baseResponse = appService.userLogin(loginData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @GetMapping("/get_data_plans")
+    public ResponseEntity<BaseResponse> getDataPlan(@Param("service_code") String service_code, @Param("network_code") String network_code, @Param("channel") String channel){
+        BaseResponse baseResponse = appService.getDataPlans(service_code,network_code,channel);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }

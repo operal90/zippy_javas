@@ -577,8 +577,8 @@ public class UtilityService {
         List<Object[]> getCustomerCommissionWalletBalance = sqlQueries.getCustomerCommissionWalletBalance(customerId);
         if(!getCustomerCommissionWalletBalance.isEmpty()){
             Object[] customerCommissionWalletBalance = getCustomerCommissionWalletBalance.get(0);
-            double walletBalance = Double.parseDouble((String) customerCommissionWalletBalance[0]);
-            String operationAt = (String) customerCommissionWalletBalance[1];
+            double walletBalance = (customerCommissionWalletBalance[0] !=null &&!customerCommissionWalletBalance[0].toString().isEmpty()) ? Double.parseDouble(customerCommissionWalletBalance[0].toString()) : 0;
+            String operationAt =  (customerCommissionWalletBalance[1] == null) ? "" : customerCommissionWalletBalance[1].toString() ;
             if(!Objects.equals(todayDate, operationAt)){
                 response.put("statusCode", "0");
                 response.put("amount", String.valueOf(walletBalance));
@@ -610,7 +610,7 @@ public class UtilityService {
         List<Object[]> getCustomerCommissionEarned = sqlQueries.getCustomerCommissionEarned(customerId);
         if(!getCustomerCommissionEarned.isEmpty()){
             Object[] customerCommission = getCustomerCommissionEarned.get(0);
-            amount= customerCommission[0].toString();
+            amount= (customerCommission[0]== null ? "0" : customerCommission[0].toString());
         }
         result.put("status_code", "0");
         result.put("message","Successful");
@@ -1046,8 +1046,6 @@ public class UtilityService {
         }
         return response;
     }
-
-
     public Object customerLogin(String customerId, String pin){
         HashMap<String, Object> result = new HashMap<>();
         pin = utilityConfiguration.shaEncryption(pin);
@@ -1098,6 +1096,30 @@ public class UtilityService {
             result.put("customer_commission_wallet_balance", this.queryCustomerCommissionWalletBalance(customerId));
             result.put("customer_wallet_balance", this.queryCustomerWalletBalance(customerId));
             result.put("commission_earned", this.queryCustomerCommissionEarned(customerId));
+        }
+        return result;
+    }
+    public Object getNetworkOperatorServiceCode(String networkOperatorCode, String networkServiceCode){
+        HashMap<String, Object> result = new HashMap<>();
+        List<Object[]> getNetworkOperatorService = sqlQueries.networkOperatorServiceCode(networkServiceCode,networkOperatorCode);
+        if(!getNetworkOperatorService.isEmpty()){
+            Object[] networkOperatorServiceCode = getNetworkOperatorService.get(0);
+            result.put("serviceAccountNumber" , networkOperatorServiceCode[0].toString());
+            result.put("serviceCommissionAccountNumber" , networkOperatorServiceCode[1].toString());
+            result.put("network" , networkOperatorServiceCode[2].toString());
+            result.put("operationCode" , networkOperatorServiceCode[3].toString());
+            result.put("provider" , networkOperatorServiceCode[4].toString());
+            result.put("description" , networkOperatorServiceCode[5].toString());
+        }
+        return result;
+    }
+
+    public Object dataPlanList(String networkServiceCode, String network){
+        HashMap<String, Object> result = new HashMap<>();
+        if(network.equals("MTN") || network.equals("AIRTEL") || network.equals("GLO") || network.equals("9MOBILE")){
+            
+        } else if (network.equals("AIRTELL") || network.equals("GLOO") || network.equals("9MOBILEE")) {
+
         }
         return result;
     }

@@ -109,4 +109,5 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT IFNULL(FORMAT(SUM(commision_charge),2),0) amt FROM customer_wallets WHERE commision_type = 'PT' " +
                     "  AND customer_id =:customerId AND MONTH(operation_at)= MONTH(NOW()) AND YEAR(operation_at) = YEAR(NOW())", nativeQuery = true)
     List<Object[]> getCustomerCommissionEarned(@Param("customerId") String customerId);
+
 }

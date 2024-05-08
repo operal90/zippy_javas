@@ -20,6 +20,7 @@ public class CustomerCommissionWalletEntity implements Serializable {
     private String customerId;
     private Double walletBalance;
     private String operationDt;
+    private String operationAt;
     private String serviceAccountNo;
 
     public CustomerCommissionWalletEntity(){

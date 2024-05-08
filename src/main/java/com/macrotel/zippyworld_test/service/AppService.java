@@ -646,7 +646,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     //Utilities
     public BaseResponse airtimePurchase(AirtimePurchaseData airtimePurchaseData){
         try{
@@ -896,6 +895,10 @@ public class AppService {
             LOG.warning(ex.getMessage());
         }
         return baseResponse;
+    }
+
+    public BaseResponse dataPurchase(){
+
     }
 
     public BaseResponse electricityVending(ElectricityData electricityData){
@@ -1174,6 +1177,34 @@ public class AppService {
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
                 baseResponse.setMessage("Login Error, Try Again later");
                 baseResponse.setResult(EMPTY_RESULT);
+            }
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse getDataPlans(String serviceCode, String networkCode, String channel){
+        try{
+
+            if(serviceCode.isEmpty() || networkCode.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Provide Request Parameters (service_code and network_code)");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            Object networkOperatorServiceDetails = utilityService.getNetworkOperatorServiceCode(networkCode,serviceCode);
+            Map<String, String> networkOperatorService = (Map<String, String>) networkOperatorServiceDetails;
+            if(networkOperatorService.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("No Record Found");
+                baseResponse.setResult(EMPTY_RESULT);
+            }
+            else{
+                String networkCodeCode = networkOperatorService.get("operationCode");
+                String networkCodeName = networkOperatorService.get("network");
+
             }
         }
         catch (Exception ex){
