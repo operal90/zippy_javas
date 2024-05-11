@@ -1123,4 +1123,64 @@ public class UtilityService {
         }
         return result;
     }
+
+    public Object dataPurchase(String operationId, String customerId, String customerName, String email, String userTypeId, String userPackageId, String commissionMode,
+                               String dataBeneficiary, String serviceAccountNumber, String serviceCommissionAccountNumber, double amount, String planCode, double commissionAmount,
+                               double amountCharge, String channel, String operatorServiceCode, String operationSummary, String provider, String network, String value){
+        HashMap<String, Object> result = new HashMap<>();
+        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+        double formattedAmount = utilityConfiguration.formattedAmount(String.valueOf(amount));
+
+        //Check Daily Transaction Balance
+        Object checkDailyTxnBalance = this.checkDailyTxnBalance(customerId,amountCharge,serviceAccountNumber);
+        Map<String, String> dailyTxnBalance = (Map<String, String>) checkDailyTxnBalance;
+        String dailyTxnBalanceStatusCode = dailyTxnBalance.get("statusCode");
+        String dailyTxnBalanceMessage = dailyTxnBalance.get("message");
+        if(Objects.equals(dailyTxnBalanceStatusCode, "0")){
+            //Get customer wallet balance
+            Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+            //Get Service Wallet Balance
+            double walletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
+            if(Objects.equals(customerWalletBalanceStatusCode, "0")){
+                if(customerWalletBalanceAmount >= amountCharge) {
+                    operationSummary = customerName + " recharges " + dataBeneficiary + " with " + network + " data bundle of N" + formattedAmount;
+                    String commissionOperationSummary = "Commission on recharges for " + customerName + " ," + dataBeneficiary + " " + network + " data bundle of N" + formattedAmount;
+                    double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amount));
+                    double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(walletBalance + amountCharge));
+
+                    //Log Into Ledger Account(CR and DR),service wallet, customer wallet.
+                    loggingService.ledgerAccountLogging(operationId, "CR", serviceAccountNumber, operationSummary, amount, customerId, channel, todayDate);
+                    loggingService.ledgerAccountLogging(operationId, "DR", serviceAccountNumber, operationSummary, amount, customerId, channel, todayDate);
+                    loggingService.serviceWalletLogging(operationId, "CR", userTypeId, userPackageId, serviceAccountNumber, customerId, operationSummary, amount,
+                            "PT", commissionAmount, amountCharge, receiverWalletBalance, todayDate);
+                    loggingService.customerWalletLogging(operationId, "MAIN", "DR", userTypeId, userPackageId, serviceAccountNumber, operationSummary,
+                            amount, "PT", commissionMode, 0, amount, customerId, buyerWalletBalance, "", todayDate);
+
+
+                }
+                else{
+                    result.put("statusCode", "1");
+                    result.put("message", "Insufficient Wallet Balance");
+                    result.put("statusMessage", "Failed");
+                    result.put("description", "");
+                }
+
+            }
+            else {
+                result.put("statusCode", "1");
+                result.put("message", customerWalletBalance.get("message"));
+                result.put("statusMessage", "Failed");
+                result.put("description", "");
+            }
+        }
+        else{
+            result.put("statusCode", "1");
+            result.put("message", dailyTxnBalanceMessage);
+            result.put("statusMessage", "Failed");
+        }
+        return result;
+    }
 }

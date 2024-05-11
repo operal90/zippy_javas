@@ -1049,7 +1049,6 @@ public class AppService {
                             commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
                         }
                     }
-                    //Ask hm to clearify commission amount
                 }
 
             }
@@ -1072,8 +1071,69 @@ public class AppService {
                 //check if user's aggregator can get commission
                 cafValue = utilityService.checkAggregatorFund(customerId);
             }
+            double totalCharge = utilities.formattedAmount(String.valueOf(amount-totalCommission));
+            String operationSummary = description + " of " + totalCharge;
+            //Save the Network log and get the Id
+            Long responseId = loggingService.networkRequestLog(operationId,txnId,dataPurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
+                    totalCommission,totalCharge,dataBeneficiary,serviceAccountNumber,provider,"","","","");
+            if(responseId > 0){
+                if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
+                    try{
+                        //Connect to the data purchase utility
+                        Object dataPurchaseUtility = utilityService.dataPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,recipient,amount,
+                                commissionAmount,totalCharge,channel,serviceAccountNumber,serviceCommissionAccountNumber,networkOperatorCode,networkServiceCode,provider,network,operationCode,operationSummary);
 
+                        Map<String, String> getAirtimePurchaseResult = (Map<String, String>) airtimePurchaseUtility;
+                        String airtimePurchaseStatusCode = getAirtimePurchaseResult.get("statusCode");
+                        String airtimePurchaseStatusMessage = getAirtimePurchaseResult.get("statusMessage");
+                        String airtimePurchaseMessage = getAirtimePurchaseResult.get("message");
+                        //Logging the transaction
+                        loggingService.responseTxnLogging("AIRTIME-PURCHASE",String.valueOf(responseId),airtimePurchaseMessage,airtimePurchaseStatusCode,airtimePurchaseStatusMessage);
+                        //Update Transaction
+                        sqlQueries.updateTransactionStatus(customerId,operationId,airtimePurchaseStatusMessage);
 
+                        if(!Objects.equals(airtimePurchaseStatusCode,"1") && !Objects.equals(cafValue,"1")){
+                            Object getSettingValue = utilityService.getSettingValue("DEFAULT_AGGREGATOR_CODE");
+                            Map<String, String> settingValueMap = (Map<String, String>) getSettingValue;
+                            String settingValueResult = (String) settingValueMap.get("result");
+                            if((aggregatorCommissionAmount > 0) && (!Objects.equals(parentAggregatorCode,settingValueResult))){
+
+                            } else if (Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode,"BM")){
+
+                            }
+                        }
+                        baseResponse.setStatus_code(airtimePurchaseStatusCode);
+                        baseResponse.setMessage(airtimePurchaseMessage);
+                        baseResponse.setResult(getAirtimePurchaseResult);
+
+                    }
+                    catch (Exception ex){
+                        //Update Transaction
+                        double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
+                        sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
+                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                        baseResponse.setMessage("Your data bundle of N"+newFormattedAmount+" is pending/successful, Confirm the status from customer service. Thank you for using Zippyworld");
+                        baseResponse.setResult(EMPTY_RESULT);
+                        return baseResponse;
+                    }
+                }
+                else{
+                    loggingService.responseTxnLogging("airtime-purchase",String.valueOf(responseId),"Session Expired, Kindly relogin","5","Unsuccessful");
+                    baseResponse.setStatus_code("5");
+                    baseResponse.setMessage("Session Expired, Kindly Relogin");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+            else{
+                String newTransactionId = txnId+"-DT-"+utilities.randomDigit(10);
+                loggingService.networkRequestLog(operationId,newTransactionId,channel,userTypeId,customerId,userPackageId,amount,commissionAmount,
+                        totalCharge,dataBeneficiary,serviceAccountNumber,network,"","3",String.valueOf(responseId), "Unsuccessful");
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage(String.valueOf(responseId));
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
