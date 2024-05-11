@@ -360,6 +360,7 @@ public class UtilityService {
                     String statusCode = (String) airtimeResponseMap.get("statusCode");
                     Object details = airtimeResponseMap.get("details");
 
+
                     if(!Objects.equals(statusCode, "0")){
                         //Reversal
                         String reversalId = utilityConfiguration.randomDigit(10);
