@@ -1100,7 +1100,7 @@ public class UtilityService {
         return result;
     }
     public Object getNetworkOperatorServiceCode(String networkOperatorCode, String networkServiceCode){
-        HashMap<String, Object> result = new HashMap<>();
+        HashMap<String, String> result = new HashMap<>();
         List<Object[]> getNetworkOperatorService = sqlQueries.networkOperatorServiceCode(networkServiceCode,networkOperatorCode);
         if(!getNetworkOperatorService.isEmpty()){
             Object[] networkOperatorServiceCode = getNetworkOperatorService.get(0);

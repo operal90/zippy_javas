@@ -897,8 +897,188 @@ public class AppService {
         return baseResponse;
     }
 
-    public BaseResponse dataPurchase(){
+    public BaseResponse dataPurchase(DataPurchaseData dataPurchaseData){
+        try{
+//            String networkOperatorCode  = dataPurchaseData.getNetwork_code();
+//            String amount = dataPurchaseData.getAmount();
+//            String planCode = "";
+//            if(networkOperatorCode.contains(":")){
+//                String[] values = amount.split("::");
+//                amount = values[0].trim();
+//                planCode = values[1].replaceAll("\\[|\\]", "").trim();
+//            }
 
+            //Get necessary data needed
+            String securityAnswer = utilities.shaEncryption(dataPurchaseData.getSecurity_answer());
+            String customerId = dataPurchaseData.getPhonenumber();
+            String dataBeneficiary = dataPurchaseData.getBeneficiary_phonenumber();
+            double amount = utilities.formattedAmount(dataPurchaseData.getAmount());
+            String channel = dataPurchaseData.getChannel();
+            String txnId = customerId+"-"+utilities.randomDigit(9);
+            String operationId = utilities.getOperationId("NU");
+            //Check if user account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Confirm Security answer
+            boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
+            if(!confirmSecurityAnswer){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Incorrect Security Answer");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check if user session token
+            int sessionToken = utilityService.checkSessionToken(customerId,dataPurchaseData.getToken());
+            if(sessionToken != 0){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Session Expired, Kindly Relogin");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check User have sufficient balance
+            Object getCustomerWalletBalance = utilityService.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+            if(amount > customerWalletBalanceAmount){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Insufficient Wallet Balance");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user has done the same transaction before in the space of 5 minutes
+            int checkPreviousTxnStatus = utilityService.checkPreviousTxnStatus(customerId, dataBeneficiary, TELCOM_SERVICE_CODE);
+            if(checkPreviousTxnStatus != 1){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Please wait for 3 minutes before you can buy data to "+dataBeneficiary);
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Get User Details and check user kyc level
+            UserAccountEntity userAccountEntity =  isCustomerExist.get();
+            String userKycLevel = userAccountEntity.getKycLevel();
+            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
+            String customerEmail = userAccountEntity.getEmail();
+            String userTypeId = userAccountEntity.getUserType();
+            String userPackageId = userAccountEntity.getUserPackageId();
+            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
+            String commissionMode = userAccountEntity.getCommissionMode();
+            String pndStatus = userAccountEntity.getPndStatus();
+
+            //Check if User is on Post No Debit
+            if(!Objects.equals("1", pndStatus)){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check User KYC Level
+            if(Objects.equals(userKycLevel,"0")){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("You can not perform this transaction due to your KYC. Kindly upgrade your KYC or contact the customer support.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user is on KYC Level 9
+            if(Objects.equals(userKycLevel,"9")){
+                if(amount > 5000){
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("You can not perform this transaction due to your KYC limit. Kindly upgrade your KYC to perform transaction above N5,000 or contact the customer support");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+
+            //Get Network Operator Service Code
+            String networkServiceCode = dataPurchaseData.getService_code();
+            String networkOperatorCode = dataPurchaseData.getNetwork_code();
+            Object getNetworkOperatorDetails = utilityService.getNetworkOperatorServiceCode(networkOperatorCode,networkServiceCode);
+            Map<String, String> networkOperatorDetails = (Map<String, String>) getNetworkOperatorDetails;
+            if(networkOperatorDetails.isEmpty()){
+                loggingService.networkRequestLog(operationId,txnId,dataPurchaseData.getChannel(),userTypeId,customerId,userPackageId,amount,
+                        0,0,dataBeneficiary,"","","",
+                        "3","Invalid Network Code and Service Code","Unsuccessful");
+
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Please select the Network");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Network Provider Details
+            String provider = networkOperatorDetails.get("provider");
+            String network = networkOperatorDetails.get("network");
+            String serviceAccountNumber = networkOperatorDetails.get("serviceAccountNumber");
+            String serviceCommissionAccountNumber = networkOperatorDetails.get("serviceCommissionAccountNumber");
+            String operationCode = networkOperatorDetails.get("operationCode");
+            String description = networkOperatorDetails.get("description");
+
+
+            //Check if users aggregator can get commission
+            int cafValue = 1;
+            double totalCommission = 0;
+            double commissionAmount = 0;
+            double aggregatorCommissionAmount = 0;
+
+            if(Objects.equals(buzAggregatorCode,"BO") ||Objects.equals(buzAggregatorCode, "BM")){
+                cafValue = 0;
+                //Get User Commission Value
+                Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNumber,userTypeId,userPackageId);
+                Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                double commissionMaster = servicecommissionMap.get("commissionMaster");
+                double commissionUser = servicecommissionMap.get("commissionUser");
+                totalCommission =  commissionUser + commissionMaster;
+
+
+                UtilityResponse getAgentCommissionStructure =utilityService.agentCommissionStructure(totalCommission,buzAggregatorCode,customerId,userTypeId,userPackageId,serviceAccountNumber);
+                if(!getAgentCommissionStructure.getStatusCode().equals(ERROR_STATUS_CODE)){
+                    Map<String, Object> result = (Map<String, Object>) getAgentCommissionStructure.getResult();
+                    for (Map.Entry<String, Object> entry : result.entrySet()) {
+                        Map<String, Object> agentDetail = (Map<String, Object>) entry.getValue();
+                        String agentType = (String) agentDetail.get("agentType");
+                        if (agentType.equals("BO")) {
+                            commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
+                        }else if (agentType.equals("BM")) {
+                            commissionAmount = Double.parseDouble((String) agentDetail.get("commission"));
+                        }
+                    }
+                    //Ask hm to clearify commission amount
+                }
+
+            }
+            else{
+                Object getPromoServiceCommission =  utilityService.getPromoServiceCommission(userTypeId,userPackageId,customerId,serviceAccountNumber,amount,parentAggregatorCode);
+                Map<String, Double> commissionMap = (Map<String, Double>) getPromoServiceCommission;
+                double commissionMaster = commissionMap.get("commissionMaster");
+                double commissionUser = commissionMap.get("commissionUser");
+                if(!Objects.equals(commissionMaster,0.0) && !Objects.equals(commissionUser,0.0)){
+                    commissionAmount = commissionUser;
+                    aggregatorCommissionAmount = commissionMaster;
+                }
+                else {
+                    Object getServiceCommission =  utilityService.getServiceCommission2(amount,serviceAccountNumber,userTypeId,userPackageId);
+                    Map<String, Double> servicecommissionMap = (Map<String, Double>) getServiceCommission;
+                    commissionAmount = servicecommissionMap.get("commissionUser");
+                    aggregatorCommissionAmount =servicecommissionMap.get("commissionMaster");
+                }
+                totalCommission = commissionAmount + aggregatorCommissionAmount;
+                //check if user's aggregator can get commission
+                cafValue = utilityService.checkAggregatorFund(customerId);
+            }
+
+
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
     }
 
     public BaseResponse electricityVending(ElectricityData electricityData){
