@@ -899,9 +899,10 @@ public class AppService {
 
     public BaseResponse dataPurchase(DataPurchaseData dataPurchaseData){
         try{
-//            String networkOperatorCode  = dataPurchaseData.getNetwork_code();
-//            String amount = dataPurchaseData.getAmount();
-//            String planCode = "";
+            String networkOperatorCode  = dataPurchaseData.getNetwork_code();
+            String initialAmount = dataPurchaseData.getAmount();
+            String planCode = dataPurchaseData.getPlan_code();
+            double amount = 0;
 //            if(networkOperatorCode.contains(":")){
 //                String[] values = amount.split("::");
 //                amount = values[0].trim();
@@ -912,7 +913,7 @@ public class AppService {
             String securityAnswer = utilities.shaEncryption(dataPurchaseData.getSecurity_answer());
             String customerId = dataPurchaseData.getPhonenumber();
             String dataBeneficiary = dataPurchaseData.getBeneficiary_phonenumber();
-            double amount = utilities.formattedAmount(dataPurchaseData.getAmount());
+            amount = utilities.formattedAmount(dataPurchaseData.getAmount());
             String channel = dataPurchaseData.getChannel();
             String txnId = customerId+"-"+utilities.randomDigit(9);
             String operationId = utilities.getOperationId("NU");
@@ -999,7 +1000,6 @@ public class AppService {
 
             //Get Network Operator Service Code
             String networkServiceCode = dataPurchaseData.getService_code();
-            String networkOperatorCode = dataPurchaseData.getNetwork_code();
             Object getNetworkOperatorDetails = utilityService.getNetworkOperatorServiceCode(networkOperatorCode,networkServiceCode);
             Map<String, String> networkOperatorDetails = (Map<String, String>) getNetworkOperatorDetails;
             if(networkOperatorDetails.isEmpty()){
@@ -1080,19 +1080,19 @@ public class AppService {
                 if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
                     try{
                         //Connect to the data purchase utility
-                        Object dataPurchaseUtility = utilityService.dataPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,recipient,amount,
-                                commissionAmount,totalCharge,channel,serviceAccountNumber,serviceCommissionAccountNumber,networkOperatorCode,networkServiceCode,provider,network,operationCode,operationSummary);
+                        Object dataPurchaseUtility = utilityService.dataPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,dataBeneficiary,serviceAccountNumber,
+                                serviceCommissionAccountNumber,amount, planCode,commissionAmount,totalCharge,channel, operationCode, operationSummary, provider, network);
 
-                        Map<String, String> getAirtimePurchaseResult = (Map<String, String>) airtimePurchaseUtility;
-                        String airtimePurchaseStatusCode = getAirtimePurchaseResult.get("statusCode");
-                        String airtimePurchaseStatusMessage = getAirtimePurchaseResult.get("statusMessage");
-                        String airtimePurchaseMessage = getAirtimePurchaseResult.get("message");
+                        Map<String, String> getDataPurchaseResult = (Map<String, String>) dataPurchaseUtility;
+                        String dataPurchaseStatusCode = getDataPurchaseResult.get("statusCode");
+                        String dataPurchaseStatusMessage = getDataPurchaseResult.get("statusMessage");
+                        String dataPurchaseMessage = getDataPurchaseResult.get("message");
                         //Logging the transaction
-                        loggingService.responseTxnLogging("AIRTIME-PURCHASE",String.valueOf(responseId),airtimePurchaseMessage,airtimePurchaseStatusCode,airtimePurchaseStatusMessage);
+                        loggingService.responseTxnLogging("DATA-PURCHASE",String.valueOf(responseId),dataPurchaseMessage,dataPurchaseStatusCode,dataPurchaseStatusMessage);
                         //Update Transaction
-                        sqlQueries.updateTransactionStatus(customerId,operationId,airtimePurchaseStatusMessage);
+                        sqlQueries.updateTransactionStatus(customerId,operationId,dataPurchaseStatusMessage);
 
-                        if(!Objects.equals(airtimePurchaseStatusCode,"1") && !Objects.equals(cafValue,"1")){
+                        if(!Objects.equals(dataPurchaseStatusCode,"1") && !Objects.equals(cafValue,"1")){
                             Object getSettingValue = utilityService.getSettingValue("DEFAULT_AGGREGATOR_CODE");
                             Map<String, String> settingValueMap = (Map<String, String>) getSettingValue;
                             String settingValueResult = (String) settingValueMap.get("result");
@@ -1102,9 +1102,9 @@ public class AppService {
 
                             }
                         }
-                        baseResponse.setStatus_code(airtimePurchaseStatusCode);
-                        baseResponse.setMessage(airtimePurchaseMessage);
-                        baseResponse.setResult(getAirtimePurchaseResult);
+                        baseResponse.setStatus_code(dataPurchaseStatusCode);
+                        baseResponse.setMessage(dataPurchaseMessage);
+                        baseResponse.setResult(getDataPurchaseResult);
 
                     }
                     catch (Exception ex){

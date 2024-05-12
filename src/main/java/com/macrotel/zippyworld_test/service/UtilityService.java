@@ -363,7 +363,7 @@ public class UtilityService {
 
                     if(!Objects.equals(statusCode, "0")){
                         //Reversal
-                        String reversalId = utilityConfiguration.randomDigit(10);
+                        String reversalId = utilityConfiguration.getOperationId("NU");
                         operationSummary = "Reversal of " + operationSummary;
                         loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,formattedAmount);
                         this.reversalOperation(reversalId,customerId,userTypeId,userPackageId,amount,channel,serviceAccountNumber,operationSummary);
@@ -670,7 +670,9 @@ public class UtilityService {
         String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         String message = "";
         if(operation.equals("AIRTIME-RECHARGE")){
-            message = "Dear Customer Airtime Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
+            message = "Dear Customer, Airtime Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
+        } else if (operation.equals("DATA-RECHARGE")) {
+            message = "Dear Customer, Data Bundle of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
         }
         //Get notification customer subscribe for;
         Optional<MessageServiceEntity> getUserNotificationSubscribe = messageServiceRepo.findByCustomerId(customerId);
@@ -1127,7 +1129,7 @@ public class UtilityService {
 
     public Object dataPurchase(String operationId, String customerId, String customerName, String email, String userTypeId, String userPackageId, String commissionMode,
                                String dataBeneficiary, String serviceAccountNumber, String serviceCommissionAccountNumber, double amount, String planCode, double commissionAmount,
-                               double amountCharge, String channel, String operatorServiceCode, String operationSummary, String provider, String network, String value){
+                               double amountCharge, String channel, String operatorServiceCode, String operationSummary, String provider, String network){
         HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
         double formattedAmount = utilityConfiguration.formattedAmount(String.valueOf(amount));
@@ -1161,6 +1163,7 @@ public class UtilityService {
                             amount, "PT", commissionMode, 0, amount, customerId, buyerWalletBalance, "", todayDate);
 
                     double dataAmount = utilityConfiguration.zeroDecimalFormattedAmount(String.valueOf(formattedAmount));
+                    double userMessageAmount = utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amount));
                     List<Object> dataVendingAPI = null;
                     if(network.equals("MTN") || network.equals("GLO") || network.equals("9MOBILE") || network.equals("AIRTEL")){
                         dataVendingAPI = (List<Object>) telecomConnect.dataVendingRequest(network, dataBeneficiary, dataAmount, planCode, operationId);
@@ -1172,6 +1175,45 @@ public class UtilityService {
                     String statusCode = (String) dataResponseMap.get("statusCode");
                     Object details = dataResponseMap.get("details");
 
+                    if(!Objects.equals(statusCode, "0")){
+                        //Reversal
+                        String reversalId = utilityConfiguration.getOperationId("NU");
+                        operationSummary = "Reversal of " + operationSummary;
+                        loggingService.reversalLogging(reversalId,operationId,serviceAccountNumber,customerId,formattedAmount);
+                        this.reversalOperation(reversalId,customerId,userTypeId,userPackageId,amount,channel,serviceAccountNumber,operationSummary);
+                        String message ="Dear "+customerName+", your data bundle  of N"+formattedAmount+" failed and it has been auto reversed. Kindly retry. Thank you for using Zippyworld";
+                        result.put("statusCode", "0");
+                        result.put("message", message);
+                        result.put("statusMessage", "Pending");
+                        result.put("description", "Issue from "+provider);
+                    }
+                    else {
+                        if (commissionAmount > 0) {
+                            if (Objects.equals(commissionMode, "ACCUMULATE")) {
+                                Object getCustomerCommissionWalletBalance = this.queryCustomerCommissionWalletBalance(customerId);
+                                Map<String, String> customerCommissionWalletBalance = (Map<String, String>) getCustomerCommissionWalletBalance;
+                                double commissionWalletBalance = Double.parseDouble(customerWalletBalance.get("amount")) + commissionAmount;
+                                loggingService.accumulateCommissionFundingLogging(operationId, customerId, serviceCommissionAccountNumber, commissionWalletBalance, commissionAmount, commissionOperationSummary);
+                            } else {
+                                buyerWalletBalance = buyerWalletBalance + commissionAmount;
+                                loggingService.instanceCommissionFundingLogging(operationId, customerId, userTypeId, userPackageId, serviceCommissionAccountNumber, commissionAmount, buyerWalletBalance, commissionOperationSummary, "Network Airtime Vending");
+                            }
+                        }
+                        Map<String, String> detailsMap = (Map<String, String>)details;
+                        String message = "Dear " + customerName + ", your data bundle of N" +userMessageAmount+" for "+ dataBeneficiary + " was successful. Thank you for using Zippyworld. REF:" + operationId;
+                        result.put("statusCode", "0");
+                        result.put("message", message);
+                        result.put("statusMessage", "Successful");
+                        result.put("amount", "N"+ userMessageAmount);
+                        result.put("reference", operationId);
+                        result.put("recipient", dataBeneficiary);
+                        result.put("recipientName", "NIL");
+                        result.put("network", detailsMap.get("network"));
+                        result.put("operationSummary", operationSummary);
+                        result.put("referenceNumber", detailsMap.get("reference_number"));
+                        //Send Notification to user
+                        this.notificationMessage(customerName,customerId,"DATA-RECHARGE", amount,userPackageId,userTypeId);
+                    }
                 }
                 else{
                     result.put("statusCode", "1");
