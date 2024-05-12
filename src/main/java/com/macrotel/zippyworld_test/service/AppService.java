@@ -1082,7 +1082,6 @@ public class AppService {
                         //Connect to the data purchase utility
                         Object dataPurchaseUtility = utilityService.dataPurchase(operationId,customerId,customerName,customerEmail,userTypeId,userPackageId,commissionMode,dataBeneficiary,serviceAccountNumber,
                                 serviceCommissionAccountNumber,amount, planCode,commissionAmount,totalCharge,channel, operationCode, operationSummary, provider, network);
-
                         Map<String, String> getDataPurchaseResult = (Map<String, String>) dataPurchaseUtility;
                         String dataPurchaseStatusCode = getDataPurchaseResult.get("statusCode");
                         String dataPurchaseStatusMessage = getDataPurchaseResult.get("statusMessage");

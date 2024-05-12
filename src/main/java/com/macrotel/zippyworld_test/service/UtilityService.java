@@ -515,7 +515,7 @@ public class UtilityService {
 
     public Object queryCustomerWalletBalance(String customerId){
         HashMap<String, String> response = new HashMap<>();
-        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")));
+        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
         response.put("statusCode", "1");
         response.put("amount", "0");
         response.put("message", "Unable to Get wallet balance");
@@ -667,7 +667,7 @@ public class UtilityService {
     public void notificationMessage (String customerName, String customerId, String operation, double amount, String userPackageId, String userTypeId){
 
         //Message Type
-        String todayDate = String.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String message = "";
         if(operation.equals("AIRTIME-RECHARGE")){
             message = "Dear Customer, Airtime Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
@@ -676,6 +676,7 @@ public class UtilityService {
         }
         //Get notification customer subscribe for;
         Optional<MessageServiceEntity> getUserNotificationSubscribe = messageServiceRepo.findByCustomerId(customerId);
+
         if(getUserNotificationSubscribe.isPresent()){
             MessageServiceEntity messageServiceEntity = getUserNotificationSubscribe.get();
             String emailSubscriber = messageServiceEntity.getEmail();
@@ -685,7 +686,8 @@ public class UtilityService {
             Optional<UserAccountEntity> getUserDetails = userAccountRepo.findByPhonenumber(customerId);
             UserAccountEntity userAccountEntity = getUserDetails.get();
             String emailAddress = userAccountEntity.getEmail();
-            String username = userAccountEntity.getAccountName();
+            String username = userAccountEntity.getFirstname();
+
 
             if(emailSubscriber.equals("0")){
                  notification.emailNotification(emailAddress,username,"Zippyworld", message);
@@ -1174,7 +1176,6 @@ public class UtilityService {
                     Map<String, Object> dataResponseMap = (Map<String, Object>) dataResponse;
                     String statusCode = (String) dataResponseMap.get("statusCode");
                     Object details = dataResponseMap.get("details");
-
                     if(!Objects.equals(statusCode, "0")){
                         //Reversal
                         String reversalId = utilityConfiguration.getOperationId("NU");
