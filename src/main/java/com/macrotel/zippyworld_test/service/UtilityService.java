@@ -1160,6 +1160,17 @@ public class UtilityService {
                     loggingService.customerWalletLogging(operationId, "MAIN", "DR", userTypeId, userPackageId, serviceAccountNumber, operationSummary,
                             amount, "PT", commissionMode, 0, amount, customerId, buyerWalletBalance, "", todayDate);
 
+                    double dataAmount = utilityConfiguration.zeroDecimalFormattedAmount(String.valueOf(formattedAmount));
+                    List<Object> dataVendingAPI = null;
+                    if(network.equals("MTN") || network.equals("GLO") || network.equals("9MOBILE") || network.equals("AIRTEL")){
+                        dataVendingAPI = (List<Object>) telecomConnect.dataVendingRequest(network, dataBeneficiary, dataAmount, planCode, operationId);
+                    } else if (network.equals("MTNN") || network.equals("GLOO") || network.equals("9MOBILEE") || network.equals("AIRTELL")) {
+                        
+                    }
+                    Object dataResponse = dataVendingAPI.get(0);
+                    Map<String, Object> dataResponseMap = (Map<String, Object>) dataResponse;
+                    String statusCode = (String) dataResponseMap.get("statusCode");
+                    Object details = dataResponseMap.get("details");
 
                 }
                 else{
