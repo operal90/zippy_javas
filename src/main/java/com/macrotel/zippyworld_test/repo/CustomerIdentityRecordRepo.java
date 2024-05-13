@@ -15,4 +15,7 @@ public interface CustomerIdentityRecordRepo extends JpaRepository<CustomerIdenti
 
     @Query(value = "SELECT c FROM CustomerIdentityRecordEntity c WHERE c.status='0' AND c.customerId =:customerId")
     List<CustomerIdentityRecordEntity> customerActiveKyc(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT c FROM CustomerIdentityRecordEntity c WHERE c.status='1'")
+    List<CustomerIdentityRecordEntity> pendingIdentityRecord();
 }

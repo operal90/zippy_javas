@@ -73,6 +73,12 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
+    @GetMapping("/list_pending_customer_kyc")
+    public ResponseEntity<BaseResponse> listPendingCustomerKyc(){
+        BaseResponse baseResponse = appService.listPendingCustomerKYC();
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
     @PostMapping("/submit_customer_kyc")
     public ResponseEntity<BaseResponse> submitCustomerKyc(@Valid @RequestBody SubmitKYCData upgradeKYCData){
         BaseResponse baseResponse = appService.submitCustomerKyc(upgradeKYCData);

@@ -63,6 +63,8 @@ public class AppService {
     NetworkTxnLogRepo networkTxnLogRepo;
     @Autowired
     SqlQueries sqlQueries;
+    @Autowired
+    DTOService dtoService;
     public AppService(UtilityService utilityService, LoggingService loggingService) {
         this.utilityService = utilityService;
         this.loggingService = loggingService;
@@ -546,6 +548,25 @@ public class AppService {
         return baseResponse;
     }
 
+    public BaseResponse listPendingCustomerKYC(){
+        try{
+            //Get All pending customer kyc
+            List<CustomerIdentityRecordEntity> getPendingIdentity = customerIdentityRecordRepo.pendingIdentityRecord();
+            List<Object> result = new ArrayList<>();
+            for (CustomerIdentityRecordEntity customerIdentityRecordEntity : getPendingIdentity){
+                result.add(dtoService.kycDTO(customerIdentityRecordEntity));
+            }
+            Collections.reverse(result);
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(result);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
     public BaseResponse fetchCustomerKyC(String customerId){
         try{
             //Is customer Exist
@@ -566,17 +587,7 @@ public class AppService {
             }
             ArrayList<Object> result = new ArrayList<>();
             for(CustomerIdentityRecordEntity customerKyCData : getCustomerKYCRecord){
-                Long kycId = Long.parseLong(customerKyCData.getKycId());
-                Optional<IdentityEntity> getIdentity = identityRepo.findById(kycId);
-                IdentityEntity identityEntity = getIdentity.get();
-                KycDTO kycDTO = new KycDTO();
-                kycDTO.setCustomerId(customerKyCData.getCustomerId());
-                kycDTO.setCustomerName(customerKyCData.getIdentityName());
-                kycDTO.setIdentityType(identityEntity.getIdentityType());
-                kycDTO.setIdentityNumber(customerKyCData.getIdentityNumber());
-                kycDTO.setDateCreated(customerKyCData.getInsertedDt());
-                kycDTO.setStatus((customerKyCData.getStatus().equals("0") ?"Approved" :"Pending Approval"));
-                result.add(kycDTO);
+                result.add(dtoService.kycDTO(customerKyCData));
             }
 
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
@@ -610,16 +621,11 @@ public class AppService {
             }
             //Approval Status 0 for Accepted and 1 for Rejected;
             String approvalStatus = upgradeKYCData.getApproval();
+            String kycLevel = upgradeKYCData.getKycLevel();
             String approvalMessage = "";
             String customerId = customerIdentityRecordEntity.getCustomerId();
             if(Objects.equals("0", approvalStatus)){
-                //Check if user have active KYC
-                String kycLevel = "1";
-                List<CustomerIdentityRecordEntity> getCustomerKYCRecord = customerIdentityRecordRepo.customerActiveKyc(customerId);
-                if(!getCustomerKYCRecord.isEmpty()){
-                    kycLevel = "2";
-                }
-                //Get user data and Update User KC Level in the account table;
+                //Get user data and Update User KYC Level in the account table;
                 Optional<UserAccountEntity> getUserData = userAccountRepo.findByPhonenumber(customerId);
                 if(getUserData.isPresent()){
                     UserAccountEntity userAccountEntity = getUserData.get();
@@ -634,7 +640,8 @@ public class AppService {
             else{
             //Delete the customer Identity number
                 approvalMessage ="Identity Rejected Successful";
-                customerIdentityRecordRepo.delete(customerIdentityRecordEntity);
+                customerIdentityRecordEntity.setStatus("2");
+                customerIdentityRecordRepo.save(customerIdentityRecordEntity);
             }
 
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);

@@ -1089,6 +1089,11 @@ public class UtilityService {
             }
             //Generate session token
             String sessionToken = this.generateSessionToken(customerId,pin);
+            //De structure the response gotten
+            HashMap<String, String> qrCustomerWalletBalanceResponse = (HashMap<String, String>) queryQrCustomerWalletBalance(customerId);
+            HashMap<String, String>  queryCustomerCommissionWalletBalance = (HashMap<String, String>) queryCustomerCommissionWalletBalance(customerId);
+            HashMap<String, String> customerWalletBalanceResponse = (HashMap<String, String>) queryCustomerWalletBalance(customerId);
+            HashMap<String, String>  commissionEarnedResponse = (HashMap<String, String>) queryCustomerCommissionEarned(customerId);
             result.put("statusCode","0");
             result.put("message", "Login Successfully");
             result.put("token", sessionToken);
@@ -1097,10 +1102,10 @@ public class UtilityService {
             result.put("is_tax_collector", this.isTaxCollector(customerId));
             result.put("is_pos_keypad_user", this.isPosKeyPadUser(customerId));
             result.put("message_detail", messageServiceDTO);
-            result.put("qr_customer_wallet_balance", this.queryQrCustomerWalletBalance(customerId));
-            result.put("customer_commission_wallet_balance", this.queryCustomerCommissionWalletBalance(customerId));
-            result.put("customer_wallet_balance", this.queryCustomerWalletBalance(customerId));
-            result.put("commission_earned", this.queryCustomerCommissionEarned(customerId));
+            result.put("qr_customer_wallet_balance", qrCustomerWalletBalanceResponse.get("amount"));
+            result.put("customer_commission_wallet_balance", queryCustomerCommissionWalletBalance.get("amount"));
+            result.put("customer_wallet_balance", customerWalletBalanceResponse.get("amount"));
+            result.put("commission_earned", commissionEarnedResponse.get("amount"));
         }
         return result;
     }
