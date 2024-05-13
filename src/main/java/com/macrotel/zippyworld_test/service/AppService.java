@@ -906,21 +906,13 @@ public class AppService {
 
     public BaseResponse dataPurchase(DataPurchaseData dataPurchaseData){
         try{
+             //Get necessary data needed
             String networkOperatorCode  = dataPurchaseData.getNetwork_code();
-            String initialAmount = dataPurchaseData.getAmount();
             String planCode = dataPurchaseData.getPlan_code();
-            double amount = 0;
-//            if(networkOperatorCode.contains(":")){
-//                String[] values = amount.split("::");
-//                amount = values[0].trim();
-//                planCode = values[1].replaceAll("\\[|\\]", "").trim();
-//            }
-
-            //Get necessary data needed
             String securityAnswer = utilities.shaEncryption(dataPurchaseData.getSecurity_answer());
             String customerId = dataPurchaseData.getPhonenumber();
             String dataBeneficiary = dataPurchaseData.getBeneficiary_phonenumber();
-            amount = utilities.formattedAmount(dataPurchaseData.getAmount());
+            double amount = utilities.formattedAmount(dataPurchaseData.getAmount());
             String channel = dataPurchaseData.getChannel();
             String txnId = customerId+"-"+utilities.randomDigit(9);
             String operationId = utilities.getOperationId("NU");

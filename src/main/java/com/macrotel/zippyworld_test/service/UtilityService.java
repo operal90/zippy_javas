@@ -1171,12 +1171,9 @@ public class UtilityService {
 
                     double dataAmount = utilityConfiguration.zeroDecimalFormattedAmount(String.valueOf(formattedAmount));
                     double userMessageAmount = utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amount));
-                    List<Object> dataVendingAPI = null;
-                    if(network.equals("MTN") || network.equals("GLO") || network.equals("9MOBILE") || network.equals("AIRTEL")){
-                        dataVendingAPI = (List<Object>) telecomConnect.dataVendingRequest(network, dataBeneficiary, dataAmount, planCode, operationId);
-                    } else if (network.equals("MTNN") || network.equals("GLOO") || network.equals("9MOBILEE") || network.equals("AIRTELL")) {
-                        
-                    }
+
+                    //Consume third party API
+                    List<Object> dataVendingAPI = (List<Object>) telecomConnect.dataVendingRequest(network, dataBeneficiary, dataAmount, planCode, operationId);
                     Object dataResponse = dataVendingAPI.get(0);
                     Map<String, Object> dataResponseMap = (Map<String, Object>) dataResponse;
                     String statusCode = (String) dataResponseMap.get("statusCode");
