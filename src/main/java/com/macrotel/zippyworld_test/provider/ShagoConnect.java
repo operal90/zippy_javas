@@ -41,6 +41,7 @@ public class ShagoConnect {
         Object electricityVending = thirdPartyAPI.callAPI(SHAGO_LIVE_BASE_URL, HttpMethod.POST,headers,jsonData);
 
         Map<String, Object> apiResponse = (Map<String, Object>) electricityVending;
+        System.out.println(apiResponse);
         if(apiResponse != null) {
             String responseCode = (String) apiResponse.get("status");
             String message= (String) apiResponse.get("message");

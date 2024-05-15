@@ -33,6 +33,6 @@ public class AppConstants {
     public static final String SHAGO_HASHKEY = "55cab22fb332762c2fb1fa36c986662e7c4c9100773914f80493bae450bd0888";
     public static final String SHAGO_TEST_BASE_URL = "https://shagopayments.com/api/test/b2b";
 //    public static final String SHAGO_LIVE_BASE_URL = "https://shagopayments.com/api/live/b2b";
-    public static final String SHAGO_LIVE_BASE_URL = "https://shago.zworld.ng/api/live/b2b";
+    public static final String SHAGO_LIVE_BASE_URL = "https://shago.zworld.ng";
 
 }

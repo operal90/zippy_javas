@@ -1337,6 +1337,7 @@ public class AppService {
                         baseResponse.setResult(getElectricityPurchaseResult);
                     }
                     catch (Exception ex){
+                        System.out.println(ex);
                         double newFormattedAmount = utilities.twoDecimalFormattedAmount(String.valueOf(amount));
                         sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
                         baseResponse.setStatus_code(ERROR_STATUS_CODE);
@@ -1423,6 +1424,63 @@ public class AppService {
         return baseResponse;
     }
 
+    public BaseResponse queryCustomerWalletBalance(CustomerQueryData customerQueryData){
+        try{
+            //Check if user account exist
+            String customerId = customerQueryData.getPhonenumber();
+            String token = customerQueryData.getToken();
+            String channel = customerQueryData.getChannel();
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            String transactionId = customerId+"-"+utilities.randomDigit(18);
+            String time = String.valueOf(System.currentTimeMillis()/1000);
+            String val = utilities.shaEncryption(customerId+"|"+transactionId+"|"+time);
+            String operationId = utilities.getOperationId("NU");
+            long responseId = loggingService.requestLogging("query-customer-wallet-balance",operationId,"I-"+transactionId,val,"2","incoming", "");
+            if(responseId > 0){
+                HashMap<String,String> result = new HashMap<>();
+                //Check if session token is valid
+                int sessionToken = utilityService.checkSessionToken(customerId,token);
+                if(sessionToken == 0 || Objects.equals(channel,"SMART-KEYPAD-POS") || Objects.equals(channel, "GRAVITY-POS")){
+                    try{
+                        Object queryCustomerWallet = utilityService.queryCustomerWalletBalance(customerId);
+                        Map<String, String> getCustomerWalletBalance = (Map<String, String>) queryCustomerWallet;
+                        result.put("amount", getCustomerWalletBalance.get("amount"));
+                        baseResponse.setStatus_code(getCustomerWalletBalance.get("statusCode"));
+                        baseResponse.setMessage(getCustomerWalletBalance.get("message"));
+                        baseResponse.setResult(result);
+                    }
+                    catch (Exception error){
+                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                        baseResponse.setMessage("Transaction Denied");
+                        baseResponse.setResult(EMPTY_RESULT);
+                    }
+                }
+                else{
+                    result.put("amount", "0");
+                    loggingService.requestLogging("query-customer-wallet-balance",operationId,"C-"+transactionId,val,"1","", "Unsuccessful");
+                    baseResponse.setStatus_code("1");
+                    baseResponse.setMessage("Session Expired, Kindly Relogin");
+                    baseResponse.setResult(result);
+                }
+            }
+            else{
+                loggingService.requestLogging("query-customer-wallet-balance",operationId,"C-"+transactionId,val,"1","", "Unsuccessful");
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Error, Kindly retry");
+                baseResponse.setResult(EMPTY_RESULT);
+            }
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
     public BaseResponse getDataPlans(String serviceCode, String networkCode, String channel){
         try{
 
