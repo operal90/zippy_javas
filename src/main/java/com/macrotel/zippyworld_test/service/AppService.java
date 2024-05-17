@@ -710,6 +710,7 @@ public class AppService {
             String commissionMode = userAccountEntity.getCommissionMode();
             String pndStatus = userAccountEntity.getPndStatus();
 
+
             //Check if User is on Post No Debit
             if(!Objects.equals("1", pndStatus)){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
