@@ -88,7 +88,7 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT code FROM electric_operator_code WHERE operator_id =:operatorId AND account_type_id =:accountTypeId", nativeQuery = true)
     List<Object[]> getElectricityOperatorCode(@Param("operatorId") String operatorId, @Param("accountTypeId") String accountTypeId);
 
-    @Query(value = "SELECT code FROM electric_operators WHERE id =:id", nativeQuery = true)
+    @Query(value = "SELECT code, name FROM electric_operators WHERE id =:id", nativeQuery = true)
     List<Object[]> getElectricityDiscoCode(@Param("id") String id);
 
     @Query(value = "SELECT COUNT(id) cnt FROM login_trackers WHERE customer_id =:customerId", nativeQuery = true)

@@ -20,8 +20,10 @@ import static com.macrotel.zippyworld_test.config.AppConstants.*;
 @Service
 public class UtilityService {
     private final LoggingService loggingService;
-    public UtilityService(LoggingService loggingService){
+    private final NotificationService notificationService;
+    public UtilityService(LoggingService loggingService, NotificationService notificationService){
         this.loggingService = loggingService;
+        this.notificationService = notificationService;
     }
     UtilityResponse utilityResponse = new UtilityResponse();
     UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
@@ -398,7 +400,7 @@ public class UtilityService {
                         result.put("operationSummary", operationSummary);
                         result.put("referenceNumber", detailsMap.get("reference_number"));
                         //Send Notification to user
-                        this.notificationMessage(customerName,customerId,"AIRTIME-RECHARGE", amount,userPackageId,userTypeId);
+                       notificationService.sendAirtimeDataNotification(customerId,userTypeId,userPackageId,customerName,email,amount);
                     }
                 }
                 else{
@@ -664,69 +666,6 @@ public class UtilityService {
         return response;
     }
 
-    public void notificationMessage (String customerName, String customerId, String operation, double amount, String userPackageId, String userTypeId){
-
-        //Message Type
-        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String message = "";
-        if(operation.equals("AIRTIME-RECHARGE")){
-            message = "Dear Customer, Airtime Top up of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
-        } else if (operation.equals("DATA-RECHARGE")) {
-            message = "Dear Customer, Data Bundle of N"+amount +" from wallet no "+customerId +" was successful at "+ todayDate+" Thanks for using Zippyworld";
-        }
-        //Get notification customer subscribe for;
-        Optional<MessageServiceEntity> getUserNotificationSubscribe = messageServiceRepo.findByCustomerId(customerId);
-
-        if(getUserNotificationSubscribe.isPresent()){
-            MessageServiceEntity messageServiceEntity = getUserNotificationSubscribe.get();
-            String emailSubscriber = messageServiceEntity.getEmail();
-            String smsSubscriber = messageServiceEntity.getSms();
-            String whatsAppSubscriber = messageServiceEntity.getWhatsapp();
-            //Get User Email Address
-            Optional<UserAccountEntity> getUserDetails = userAccountRepo.findByPhonenumber(customerId);
-            UserAccountEntity userAccountEntity = getUserDetails.get();
-            String emailAddress = userAccountEntity.getEmail();
-            String username = userAccountEntity.getFirstname();
-
-
-            if(emailSubscriber.equals("0")){
-                 notification.emailNotification(emailAddress,username,"Zippyworld", message);
-            }
-            //Check User Balance before sending whatsapp and sms as whatsapp cost 5 naira and sms cost 4 naira
-            Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
-            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
-            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
-
-            if(smsSubscriber.equals("0")){
-                if(customerWalletBalanceAmount >= 4) {
-                    int smsResponse =   notification.smsNotification(customerId, "Zippyworld", message);
-                    if(smsResponse == 0){
-                        customerWalletBalanceAmount -=4;
-                        //Log the Transaction
-                        String smsOperationId = utilityConfiguration.getOperationId("NOT");
-                        String operationSummaryMessage = customerName +" paid N4.00 for SMS Message Notification";
-                        loggingService.customerWalletLogging(smsOperationId,"MAIN","DR",userTypeId,userPackageId,"",operationSummaryMessage,
-                                4,"","",0,4,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),"Successful",todayDate);
-                    }
-                }
-            }
-
-            if(whatsAppSubscriber.equals("0")){
-                if(customerWalletBalanceAmount >= 5) {
-                    int whatsappResponse = notification.whatsappNotification(customerId, "Zippyworld", message);
-                    if(whatsappResponse == 0){
-                        customerWalletBalanceAmount -=5;
-                        String whatsAppOperationId = utilityConfiguration.getOperationId("NOT");
-                        String operationSummaryMessage = customerName +" paid N5.00 for Whatsapp Message Notification";
-                        loggingService.customerWalletLogging(whatsAppOperationId,"MAIN","DR",userTypeId,userPackageId,"",operationSummaryMessage,
-                                5,"","",0,5,customerId, utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount)),"Successful", todayDate);
-                    }
-
-                }
-            }
-
-        }
-    }
 
     public Integer checkPreviousTxnStatus(String customerId, String identityNumber, String serviceCode){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -796,6 +735,7 @@ public class UtilityService {
                         amount = utilityConfiguration.zeroDecimalFormattedAmount(String.valueOf(amount));
                         String serviceCode =  this.getElectricityOperatorCode(operatorId,accountTypeId);
                         String discoCode = this.getDiscoCode(operatorId);
+                        String discoName = this.getDiscoName(operationId);
                         Object thirdPartyElectricityResponse = new Object[0];
                         if(Objects.equals(provider,"SHAGO")){
                             thirdPartyElectricityResponse = shagoConnect.electricityConnect(operationId,cardIdentity,amount,accountTypeId,operatorId,discoCode,buyerPhoneNumber,buyerName,customerAddress);
@@ -874,6 +814,7 @@ public class UtilityService {
                             }
                         }
                         //Call notification method
+                        notificationService.sendElectricityNotification(customerId,userTypeId,userPackageId,customerName,email,amount,cardIdentity,buyerName,token,discoName);
                     }
                     else{
                         result.put("statusCode", "1");
@@ -934,6 +875,15 @@ public class UtilityService {
             code = electricityOperatorCode[0].toString();
         }
         return code;
+    }
+    public String getDiscoName(String id){
+        String discoName ="";
+        List<Object[]> getElectricityDiscoCode = sqlQueries.getElectricityDiscoCode(id);
+        if(!getElectricityDiscoCode.isEmpty()){
+            Object[] electricityOperatorCode = getElectricityDiscoCode.get(0);
+            discoName = electricityOperatorCode[1].toString();
+        }
+        return discoName;
     }
 
     public Boolean isPhoneNumberUnique(String phoneNumber){
@@ -1215,7 +1165,7 @@ public class UtilityService {
                         result.put("operationSummary", operationSummary);
                         result.put("referenceNumber", detailsMap.get("reference_number"));
                         //Send Notification to user
-                        this.notificationMessage(customerName,customerId,"DATA-RECHARGE", amount,userPackageId,userTypeId);
+                        notificationService.sendAirtimeDataNotification(customerId,userTypeId,userPackageId,customerName,email,amount);
                     }
                 }
                 else{

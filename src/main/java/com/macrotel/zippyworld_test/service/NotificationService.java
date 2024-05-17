@@ -83,7 +83,7 @@ public class NotificationService {
         return userSubscribeResult;
     }
 
-    public void sendAirtimeNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount){
+    public void sendAirtimeDataNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount){
         //Get user subscription
         Object userSubscription = this.userNotificationSubscribe(customerId,userTypeId,userPackageId,customerName);
         Map<String,Integer> getUserSubscription = (Map<String,Integer>) userSubscription;
@@ -103,5 +103,31 @@ public class NotificationService {
         airtimeParameters.put("whatsappYes", whatsappYes);
         airtimeParameters.put("smsYes", smsYes);
          thirdPartyAPI.callAPI(NOTIFICATION_BASE_URL, HttpMethod.POST,notificationHeader,airtimeParameters);
+    }
+
+    public void sendElectricityNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount, String meterNumber, String meterName, String token, String disco){
+        //Get user subscription
+        Object userSubscription = this.userNotificationSubscribe(customerId,userTypeId,userPackageId,customerName);
+        Map<String,Integer> getUserSubscription = (Map<String,Integer>) userSubscription;
+        int emailYes = getUserSubscription.get("emailYes");
+        int whatsappYes = getUserSubscription.get("whatsAppYes");
+        int smsYes = getUserSubscription.get("smsYes");
+
+        Map<String, String> notificationHeader = new HashMap<>();
+        notificationHeader.put("Content-Type", "application/json");
+        HashMap<String, Object> electricityParameters = new HashMap<>();
+        electricityParameters.put("operation", "ELECTRICITY");
+        electricityParameters.put("customerName", customerName);
+        electricityParameters.put("walletNumber", customerId);
+        electricityParameters.put("email", customerEmail);
+        electricityParameters.put("amount", amount);
+        electricityParameters.put("meterNumber", meterNumber);
+        electricityParameters.put("meterName", meterName);
+        electricityParameters.put("powerToken", token);
+        electricityParameters.put("disco", disco);
+        electricityParameters.put("emailYes", emailYes);
+        electricityParameters.put("whatsappYes", whatsappYes);
+        electricityParameters.put("smsYes", smsYes);
+        thirdPartyAPI.callAPI(NOTIFICATION_BASE_URL, HttpMethod.POST,notificationHeader,electricityParameters);
     }
 }
