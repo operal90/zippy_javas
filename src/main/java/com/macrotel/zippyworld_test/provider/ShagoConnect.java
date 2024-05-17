@@ -41,7 +41,6 @@ public class ShagoConnect {
         Object electricityVending = thirdPartyAPI.callAPI(SHAGO_LIVE_BASE_URL, HttpMethod.POST,headers,jsonData);
 
         Map<String, Object> apiResponse = (Map<String, Object>) electricityVending;
-        System.out.println(apiResponse);
         if(apiResponse != null) {
             String responseCode = (String) apiResponse.get("status");
             String message= (String) apiResponse.get("message");
@@ -52,7 +51,7 @@ public class ShagoConnect {
                  configureToken = hasConfigureToken ? (String) apiResponse.get("configureToken") : "";
                  resetToken = hasResetToken ? (String) apiResponse.get("resetToken") : "";
 
-                 if(!Objects.equals(configureToken,"") && !Objects.equals(resetToken,"")){
+                 if(configureToken != null && !configureToken.isEmpty() && resetToken != null && !resetToken.isEmpty()){
                      token = (String) apiResponse.get("token");
                      tokenMessage = " CONFIGURE TOKEN: "+configureToken+" , RESET TOKEN: "+resetToken+" , MAIN TOKEN:"+token;
                  }

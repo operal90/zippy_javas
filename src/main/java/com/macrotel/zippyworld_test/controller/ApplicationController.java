@@ -136,6 +136,19 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
+    @PostMapping("/query_customer_commission_wallet_balance")
+    public ResponseEntity<BaseResponse> queryCustomerCommissionWalletBalance(@Valid @RequestBody CustomerQueryData customerQueryData){
+        BaseResponse baseResponse = appService.queryCustomerCommissionWalletBalance(customerQueryData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @PostMapping("/commission_earned")
+    public ResponseEntity<BaseResponse> commissionEarned(@Valid @RequestBody CommissionEarnedData commissionEarnedData){
+        BaseResponse baseResponse = appService.commissionEarned(commissionEarnedData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse handleValidationExceptions(

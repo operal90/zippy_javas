@@ -14,7 +14,9 @@ public class TextTbEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "text_a")
     private String textA;
+    @Column(name = "text_b")
     private String textB;
     private String insertedDt;
 
