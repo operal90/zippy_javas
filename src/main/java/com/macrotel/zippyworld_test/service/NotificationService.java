@@ -7,6 +7,7 @@ import com.macrotel.zippyworld_test.entity.UserAccountEntity;
 import com.macrotel.zippyworld_test.repo.MessageServiceRepo;
 import com.macrotel.zippyworld_test.repo.UserAccountRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,7 @@ public class NotificationService {
     private final  UtilityService utilityService;
     private final LoggingService loggingService;
     ThirdPartyAPI thirdPartyAPI = new ThirdPartyAPI();
-    public NotificationService(UtilityService utilityService, LoggingService loggingService){
+    public NotificationService(@Lazy UtilityService utilityService, LoggingService loggingService){
         this.utilityService = utilityService;
         this.loggingService = loggingService;
     }
@@ -83,7 +84,7 @@ public class NotificationService {
         return userSubscribeResult;
     }
 
-    public void sendAirtimeDataNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount){
+    public void sendAirtimeNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount){
         //Get user subscription
         Object userSubscription = this.userNotificationSubscribe(customerId,userTypeId,userPackageId,customerName);
         Map<String,Integer> getUserSubscription = (Map<String,Integer>) userSubscription;
@@ -94,7 +95,7 @@ public class NotificationService {
         Map<String, String> notificationHeader = new HashMap<>();
         notificationHeader.put("Content-Type", "application/json");
         HashMap<String, Object> airtimeParameters = new HashMap<>();
-        airtimeParameters.put("operation", "AIRTIME/DATA");
+        airtimeParameters.put("operation", "AIRTIME");
         airtimeParameters.put("customerName", customerName);
         airtimeParameters.put("walletNumber", customerId);
         airtimeParameters.put("email", customerEmail);
@@ -103,6 +104,28 @@ public class NotificationService {
         airtimeParameters.put("whatsappYes", whatsappYes);
         airtimeParameters.put("smsYes", smsYes);
          thirdPartyAPI.callAPI(NOTIFICATION_BASE_URL, HttpMethod.POST,notificationHeader,airtimeParameters);
+    }
+
+    public void sendDataNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount){
+        //Get user subscription
+        Object userSubscription = this.userNotificationSubscribe(customerId,userTypeId,userPackageId,customerName);
+        Map<String,Integer> getUserSubscription = (Map<String,Integer>) userSubscription;
+        int emailYes = getUserSubscription.get("emailYes");
+        int whatsappYes = getUserSubscription.get("whatsAppYes");
+        int smsYes = getUserSubscription.get("smsYes");
+
+        Map<String, String> notificationHeader = new HashMap<>();
+        notificationHeader.put("Content-Type", "application/json");
+        HashMap<String, Object> airtimeParameters = new HashMap<>();
+        airtimeParameters.put("operation", "DATA");
+        airtimeParameters.put("customerName", customerName);
+        airtimeParameters.put("walletNumber", customerId);
+        airtimeParameters.put("email", customerEmail);
+        airtimeParameters.put("amount", amount);
+        airtimeParameters.put("emailYes", emailYes);
+        airtimeParameters.put("whatsappYes", whatsappYes);
+        airtimeParameters.put("smsYes", smsYes);
+        thirdPartyAPI.callAPI(NOTIFICATION_BASE_URL, HttpMethod.POST,notificationHeader,airtimeParameters);
     }
 
     public void sendElectricityNotification(String customerId, String userTypeId, String userPackageId, String customerName, String customerEmail, double amount, String meterNumber, String meterName, String token, String disco){

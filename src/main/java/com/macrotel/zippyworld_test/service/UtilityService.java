@@ -9,6 +9,7 @@ import com.macrotel.zippyworld_test.provider.ShagoConnect;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
 import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ import static com.macrotel.zippyworld_test.config.AppConstants.*;
 public class UtilityService {
     private final LoggingService loggingService;
     private final NotificationService notificationService;
-    public UtilityService(LoggingService loggingService, NotificationService notificationService){
+    public UtilityService(LoggingService loggingService, @Lazy NotificationService notificationService){
         this.loggingService = loggingService;
         this.notificationService = notificationService;
     }
@@ -400,7 +401,7 @@ public class UtilityService {
                         result.put("operationSummary", operationSummary);
                         result.put("referenceNumber", detailsMap.get("reference_number"));
                         //Send Notification to user
-                       notificationService.sendAirtimeDataNotification(customerId,userTypeId,userPackageId,customerName,email,amount);
+                       notificationService.sendAirtimeNotification(customerId,userTypeId,userPackageId,customerName,email,amount);
                     }
                 }
                 else{
@@ -1165,7 +1166,7 @@ public class UtilityService {
                         result.put("operationSummary", operationSummary);
                         result.put("referenceNumber", detailsMap.get("reference_number"));
                         //Send Notification to user
-                        notificationService.sendAirtimeDataNotification(customerId,userTypeId,userPackageId,customerName,email,amount);
+                        notificationService.sendDataNotification(customerId,userTypeId,userPackageId,customerName,email,amount);
                     }
                 }
                 else{

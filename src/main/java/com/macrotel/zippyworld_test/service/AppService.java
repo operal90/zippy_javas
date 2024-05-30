@@ -11,6 +11,7 @@ import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.*;
 import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,7 +66,7 @@ public class AppService {
     SqlQueries sqlQueries;
     @Autowired
     DTOService dtoService;
-    public AppService(UtilityService utilityService, LoggingService loggingService) {
+    public AppService(@Lazy UtilityService utilityService, LoggingService loggingService) {
         this.utilityService = utilityService;
         this.loggingService = loggingService;
     }
@@ -1581,6 +1582,63 @@ public class AppService {
                 String networkCodeCode = networkOperatorService.get("operationCode");
                 String networkCodeName = networkOperatorService.get("network");
 
+            }
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse getGardensCustomerDetails(String meterNumber){
+        try{
+            HashMap<String, String> encryptedArray = new HashMap<>();
+            encryptedArray.put("meterNo", meterNumber);
+            String encryptedData = utilities.encryptData(encryptedArray);
+            String requestTimeStamp = utilities.currentTimeStamp();
+            String requestId = utilities.randomDigit(8);
+
+            HashMap<String, String> apiParameters = new HashMap<>();
+            apiParameters.put("reqId", requestId);
+            apiParameters.put("timestamp", requestTimeStamp);
+            apiParameters.put("data", encryptedData);
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Type", " application/json");
+            String baseUrl = HES_LIVE_BASE_URL+"GetCustomer";
+            Object getCustomerInformationAPI = thirdPartyAPI.callAPI(baseUrl, HttpMethod.POST,headers,apiParameters);
+            Map<Object, String> customerInformationResponse = (Map<Object, String>) getCustomerInformationAPI;
+
+            if(customerInformationResponse != null){
+                String requestIdResponse = customerInformationResponse.get("reqId");
+                long timeStampResponse = Long.parseLong(String.valueOf(customerInformationResponse.get("timestamp")))/1000;
+                String dataResponse = customerInformationResponse.get("data");
+                long currentResponseTimeStamp = Long.parseLong(utilities.currentTimeStamp());
+                long timeDifference =  currentResponseTimeStamp -  timeStampResponse;
+
+                if(timeDifference < 15){
+                    Object decryptData = utilities.decryptData(dataResponse);
+                    Map<String, String> decryptResponse = (Map<String, String>) decryptData;
+                    boolean result = Boolean.parseBoolean(String.valueOf(decryptResponse.get("Result")));
+                    if(!result){
+                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                        baseResponse.setMessage(decryptResponse.get("msg"));
+                        baseResponse.setResult(decryptResponse);
+                        return baseResponse;
+                    }
+                    else{
+                        decryptResponse.remove("msg");
+                        decryptResponse.remove("Result");
+                        baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+                        baseResponse.setMessage(SUCCESS_MESSAGE);
+                        baseResponse.setResult(decryptResponse);
+                    }
+                }
+                else {
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("Network Error, Kindly retry");
+                    baseResponse.setResult(EMPTY_RESULT);
+                }
             }
         }
         catch (Exception ex){

@@ -20,8 +20,12 @@ import static com.macrotel.zippyworld_test.config.AppConstants.*;
 @RestController
 @RequestMapping("/zippyworld_test")
 public class ApplicationController {
+
+    private AppService appService;
     @Autowired
-    AppService appService;
+    public void setAppService(AppService appService) {
+        this.appService = appService;
+    }
 
     @GetMapping("/testing")
     public ResponseEntity<BaseResponse> testing(){
@@ -145,6 +149,13 @@ public class ApplicationController {
     @PostMapping("/commission_earned")
     public ResponseEntity<BaseResponse> commissionEarned(@Valid @RequestBody CommissionEarnedData commissionEarnedData){
         BaseResponse baseResponse = appService.commissionEarned(commissionEarnedData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
+    @GetMapping("/getgardenscustomerdetails")
+    public ResponseEntity<BaseResponse> getGardensCustomerDetails(@Param("meternumber") String meternumber){
+        BaseResponse baseResponse = appService.getGardensCustomerDetails(meternumber);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
