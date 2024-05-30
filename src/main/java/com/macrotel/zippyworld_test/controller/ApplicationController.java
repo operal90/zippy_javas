@@ -160,6 +160,13 @@ public class ApplicationController {
         return new ResponseEntity<>(baseResponse,status);
     }
 
+    @PostMapping("/auto_private_power_vending")
+    public ResponseEntity<BaseResponse> autoPrivatePowerVending(@Valid @RequestBody AutoPrivatePowerData autoPrivatePowerData){
+        BaseResponse baseResponse = appService.autoPrivatePowerVending(autoPrivatePowerData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse handleValidationExceptions(

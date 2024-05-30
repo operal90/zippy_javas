@@ -1647,4 +1647,104 @@ public class AppService {
         return baseResponse;
     }
 
+    public BaseResponse autoPrivatePowerVending(AutoPrivatePowerData autoPrivatePowerData){
+        try{
+            //Get necessary data needed
+            String securityAnswer = utilities.shaEncryption(autoPrivatePowerData.getSecurity_answer());
+            String customerId = autoPrivatePowerData.getPhonenumber();
+            double amount = utilities.formattedAmount(autoPrivatePowerData.getAmount());
+            String channel = autoPrivatePowerData.getChannel();
+            String cardIdentity = autoPrivatePowerData.getCard_identity();
+            //Check if user account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Confirm Security answer
+            boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
+            if(!confirmSecurityAnswer){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Incorrect Security Answer");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user session token
+            int sessionToken = utilityService.checkSessionToken(customerId,autoPrivatePowerData.getToken());
+            if(sessionToken != 0){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Session Expired, Kindly Relogin");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check User have sufficient balance
+            Object getCustomerWalletBalance = utilityService.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+            if(amount > customerWalletBalanceAmount){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Insufficient Wallet Balance");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get User Details and check user kyc level
+            UserAccountEntity userAccountEntity =  isCustomerExist.get();
+            String userKycLevel = userAccountEntity.getKycLevel();
+            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
+            String customerEmail = userAccountEntity.getEmail();
+            String userTypeId = userAccountEntity.getUserType();
+            String userPackageId = userAccountEntity.getUserPackageId();
+            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
+            String commissionMode = userAccountEntity.getCommissionMode();
+            String pndStatus = userAccountEntity.getPndStatus();
+
+
+            //Check if User is on Post No Debit
+            if(!Objects.equals("1", pndStatus)){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check User KYC Level
+            if(Objects.equals(userKycLevel,"0")){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("You can not perform this transaction due to your KYC. Kindly upgrade your KYC or contact the customer support.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user is on KYC Level 9
+            if(Objects.equals(userKycLevel,"9")){
+                if(amount > 5000){
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("You can not perform this transaction due to your KYC limit. Kindly upgrade your KYC to perform transaction above N5,000 or contact the customer support");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+
+            //Check estate code from meter number
+            Object getMeterEstateDetails = utilityService.getEstateCode(cardIdentity);
+            Map<String, String> meterResultMap = (Map<String,String>) getMeterEstateDetails;
+            String meterStatusCode = meterResultMap.get("statusCode");
+            String estateCode = meterResultMap.get("estateCode");
+            if(meterStatusCode.equals("1")){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Invalid Meter Number, Kindly check meter number");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
 }

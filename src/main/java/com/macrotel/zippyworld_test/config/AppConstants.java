@@ -7,6 +7,7 @@ public class AppConstants {
     public static final String SUCCESS_STATUS_CODE = "0";
     public  static final Object EMPTY_RESULT = new Object [0];
     public static final String PHONE_NUMBER_VALIDATION_REGEX = "^\\d{11}$";
+    public static final String CHOICE_VALIDATION_REGEX = "^(0|1)$";
     public static final String PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()-[{}]:;'?/*~$^+=<>.]).{6,20}$";
 //    public static final String AMOUNT_VALIDATION_REGEX = "^[\\d,\\.]+$";
     public static final String AMOUNT_VALIDATION_REGEX = "^\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?$|^\\d+(?:\\.\\d+)?$";

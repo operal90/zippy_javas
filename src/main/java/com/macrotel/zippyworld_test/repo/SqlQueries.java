@@ -110,4 +110,7 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
                     "  AND customer_id =:customerId AND MONTH(operation_at)= MONTH(NOW()) AND YEAR(operation_at) = YEAR(NOW())", nativeQuery = true)
     List<Object[]> getCustomerCommissionEarned(@Param("customerId") String customerId);
 
+    @Query(value = "SELECT estate_code FROM estate_meter_details WHERE meter_no =:cardIdentity", nativeQuery = true)
+    List<Object[]> getCustomerEstateCode(@Param("cardIdentity") String cardIdentity);
+
 }

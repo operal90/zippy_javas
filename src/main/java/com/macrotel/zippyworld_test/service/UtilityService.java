@@ -1191,4 +1191,23 @@ public class UtilityService {
         }
         return result;
     }
+
+
+    public Object getEstateCode(String cardIdentity){
+        HashMap<String, Object> result = new HashMap<>();
+
+        List<Object[]> getEstateCode = sqlQueries.getCustomerEstateCode(cardIdentity);
+        if(!getEstateCode.isEmpty()){
+            Object[] estateCode = getEstateCode.get(0);
+            result.put("statusCode", "0");
+            result.put("message", "Record found");
+            result.put("estateCode", estateCode[0].toString());
+        }
+        else{
+            result.put("statusCode", "1");
+            result.put("message", "No record found");
+            result.put("estateCode", "");
+        }
+        return result;
+    }
 }
