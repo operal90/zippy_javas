@@ -10,17 +10,12 @@ public class AppConstants {
     public static final String PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()-[{}]:;'?/*~$^+=<>.]).{6,20}$";
 //    public static final String AMOUNT_VALIDATION_REGEX = "^[\\d,\\.]+$";
     public static final String AMOUNT_VALIDATION_REGEX = "^\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?$|^\\d+(?:\\.\\d+)?$";
-
     public static final String PAYMENT_VALIDATION_REGEX = "^(?i)(bank transfer|card payment)$";
-
     public static final String WITHDRAWAL_VALIDATION_REGEX = "^(?i)(portfolio balance|investment balance)$";
     public static final String APPROVAL_VALIDATION_REGEX = "^(0|1)$";
-
     public static final String CHARACTER_VALIDATION_REGEX = "^[a-zA-Z ]{3,}(?: [a-zA-Z ]+){0,2}$";
     public static final String PIN_VALIDATION_REGEX = "^\\d{4}$";
-
     public static final String SINGLE_DIGIT_VALIDATION_REGEX = "^\\d{1}$";
-
     public  static final String BVN_NIN_VALIDATION_REGEX="^\\d{11}$";
     public static final String NUMBER_VALIDATION_REGEX = "^\\d+$";
     public static final String  END_POINT_TLS = "https://zippyworld.com.ng:8443/telcom_live_services/main/api/";
@@ -33,5 +28,6 @@ public class AppConstants {
     public static final String SHAGO_HASHKEY = "55cab22fb332762c2fb1fa36c986662e7c4c9100773914f80493bae450bd0888";
     public static final String SHAGO_LIVE_BASE_URL = "https://shagopayments.com/api/live/b2b";
     public static final String NOTIFICATION_BASE_URL = "http://194.163.149.51:3001/notifications/notif";
+    public static final String HES_LIVE_BASE_URL = "http://185.252.232.72/api/";
 
 }

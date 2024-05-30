@@ -1,15 +1,28 @@
 package com.macrotel.zippyworld_test.config;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.logging.Logger;
+
+import static ch.qos.logback.core.encoder.ByteArrayUtil.hexStringToByteArray;
 
 public class UtilityConfiguration {
+    private static final String secretKey = "43877ABC5A56AE733918B7A3F850CD17";
+    private static final Logger LOG = Logger.getLogger(UtilityConfiguration.class.getName());
     public String capitalizeString(String text){
         if(text == null || text.isEmpty()){
             return text;
@@ -170,4 +183,62 @@ public class UtilityConfiguration {
         int truncatedAmount = (int) removeCommaAmount;
         return (double) truncatedAmount;
     }
+
+    private static class JsonUtil{
+        private static final Gson gson = new Gson();
+        public  static String toJson(Object object){
+            return gson.toJson(object);
+        }
+        public static <T> T fromJson(String jsonString, Class<T> clazz) {
+            return gson.fromJson(jsonString, clazz);
+        }
+    }
+
+    public String encryptData(Object payload){
+        String encryptedValue = null;
+        try{
+            String jsonString = JsonUtil.toJson(payload);
+            //Convert the payload to byteArray to get byte ArrayD
+            byte[] D =  jsonString.getBytes(StandardCharsets.UTF_8);
+            // Create a SecretKeySpec from the secret key bytes
+            SecretKeySpec keySpec = new SecretKeySpec(hexStringToByteArray(secretKey), "AES");
+            //Create a cipher instance for the AES/ECB/PKCS5Padding
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            //Encrypt the byte array
+            byte[] encryptedBytes = cipher.doFinal(D);
+            encryptedValue = Base64.getEncoder().encodeToString(encryptedBytes);
+        }
+        catch (Exception e) {
+            LOG.warning(e.getMessage());
+        }
+        return encryptedValue;
+    }
+    public String currentTimeStamp(){
+        return String.valueOf((System.currentTimeMillis())/1000);
+    }
+
+    public Map<String, Object> decryptData(String encryptedData) {
+        Map<String, Object> decryptedObject = null;
+        try {
+            // Decode the Base64-encoded string to obtain the byte array A
+            byte[] decodedBytes = Base64.getDecoder().decode(encryptedData);
+            SecretKeySpec keySpec = new SecretKeySpec(hexStringToByteArray(secretKey), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+
+            // Initialize the cipher with the secret key for decryption
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            byte[] decryptedBytes = cipher.doFinal(decodedBytes);
+            String decryptedString = new String(decryptedBytes, StandardCharsets.UTF_8);
+
+            // Parse the decrypted string to a Map
+            Type type = new TypeToken<Map<String, Object>>() {}.getType();
+            decryptedObject = new Gson().fromJson(decryptedString, type);
+        } catch (Exception e) {
+            LOG.warning(e.getMessage());
+        }
+        return decryptedObject;
+    }
+
+
 }
