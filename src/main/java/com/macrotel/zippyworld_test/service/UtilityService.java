@@ -1192,7 +1192,6 @@ public class UtilityService {
         return result;
     }
 
-
     public Object getEstateCode(String cardIdentity){
         HashMap<String, Object> result = new HashMap<>();
 
@@ -1208,6 +1207,47 @@ public class UtilityService {
             result.put("message", "No record found");
             result.put("estateCode", "");
         }
+        return result;
+    }
+
+    public Object getServiceCommissionDetails(String serviceAccountNo, String userType){
+        HashMap<String, String> result = new HashMap<>();
+        List<Object[]> getCommissionDetails = sqlQueries.getServiceCommissionDetails(serviceAccountNo, userType);
+        if(!getCommissionDetails.isEmpty()){
+            Object[] commissionDetails = getCommissionDetails.get(0);
+            result.put("cmt", commissionDetails[0] !=null && !commissionDetails[0].toString().isEmpty() ? commissionDetails[0].toString() : "");
+            result.put("cmp", commissionDetails[1] !=null && !commissionDetails[1].toString().isEmpty() ? commissionDetails[1].toString() : "0");
+            result.put("csc", commissionDetails[2] !=null && !commissionDetails[2].toString().isEmpty() ? commissionDetails[2].toString() : "0");
+        }
+        else{
+            result.put("cmt", "");
+            result.put("cmp", "0");
+            result.put("csc", "0");
+        }
+        return result;
+    }
+
+    public Double getServiceCommission(double amount, String serviceAccountNo, String userType){
+        double commissionAmount = 0;
+        Object getServiceCommissionDetails = this.getServiceCommissionDetails(serviceAccountNo,userType);
+        Map<String, String> serviceCommissionDetails = (Map<String, String>) getServiceCommissionDetails;
+        String serviceCommissionType = serviceCommissionDetails.get("cmt");
+        double serviceCommissionAmount = Double.parseDouble(serviceCommissionDetails.get("cmp"));
+        if(serviceCommissionType.equals("PT")){
+            commissionAmount = (amount * serviceCommissionAmount) /100;
+        }
+        else{
+            commissionAmount = serviceCommissionAmount;
+        }
+        return commissionAmount;
+    }
+
+    public Object autoPrivatePowerVending(String operationId, String customerId, String userTypeId, String cardIdentity, String serviceAccountNumber, double amount,
+                                          double commissionAmount, double amountCharge, String channel, String loadingType, String orderNumber, String estateCode){
+
+        HashMap<String, Object> result = new HashMap<>();
+        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+
         return result;
     }
 }

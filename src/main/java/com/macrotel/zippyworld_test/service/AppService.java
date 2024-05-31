@@ -1657,6 +1657,7 @@ public class AppService {
             double amount = utilities.formattedAmount(autoPrivatePowerData.getAmount());
             String channel = autoPrivatePowerData.getChannel();
             String cardIdentity = autoPrivatePowerData.getCard_identity();
+            String loadingType = autoPrivatePowerData.getLoading_type();
             //Check if user account exist
             Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
             if(isCustomerExist.isEmpty()){
@@ -1741,7 +1742,38 @@ public class AppService {
                 return baseResponse;
             }
 
+            String serviceAccountNumber = "1000000031";
+            double commissionAmount = utilityService.getServiceCommission(amount,serviceAccountNumber,"1");
+            double totalCharge = amount+commissionAmount;
+            String txnId = customerId+utilities.randomDigit(9);
+            String operationId = utilities.getOperationId("NU");
+            String orderNumber = utilities.randomDigit(18);
 
+            Long responseId = loggingService.autoPrivatePowerRequestLogging(operationId,userTypeId,orderNumber,customerId,amount,commissionAmount,totalCharge,cardIdentity,"",
+                                estateCode,"","","",customerName);
+            if(responseId > 0){
+                if(sessionToken == 0 || channel.equals("SMART-KEYPAD-POS") || channel.equals("GRAVITY-POS")){
+                    try{
+                        Object getAutoPrivatePowerVending = utilityService.autoPrivatePowerVending(operationId,customerId,userTypeId,cardIdentity,serviceAccountNumber,amount,commissionAmount,totalCharge,channel,
+                                loadingType,orderNumber,estateCode);
+                    }
+                    catch (Exception ex){
+                        loggingService.responseTxnLogging("",String.valueOf(responseId),"Failed to connect","2","Unsuccessful");
+                        sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
+                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                        baseResponse.setMessage("Service Unavailable a the moment");
+                        baseResponse.setResult(EMPTY_RESULT);
+                        return baseResponse;
+                    }
+                }
+            }
+            else {
+                loggingService.autoPrivatePowerRequestLogging(operationId,userTypeId,orderNumber,customerId,amount,commissionAmount,totalCharge,cardIdentity,"",
+                        estateCode,"3","","Unsuccessful",customerName);
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage(ERROR_MESSAGE);
+                baseResponse.setResult(EMPTY_RESULT);
+            }
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

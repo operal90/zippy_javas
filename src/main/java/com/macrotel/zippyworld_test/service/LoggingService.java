@@ -35,7 +35,8 @@ public class LoggingService {
     TextTbRepo textTbRepo;
     @Autowired
     RequestLoggingRepo requestLoggingRepo;
-
+    @Autowired
+    AutoPrivatePowerLogRepo autoPrivatePowerLogRepo;
 
     @Transactional
     public Long networkRequestLog(String operationId, String txnId, String channel, String userTypeId,
@@ -251,4 +252,27 @@ public class LoggingService {
         requestLoggingEntity = requestLoggingRepo.save(requestLoggingEntity);
         return requestLoggingEntity.getId();
     }
+
+    @Transactional
+    public Long autoPrivatePowerRequestLogging(String operationId, String userTypeId, String orderNo, String customerId, double amount, double commissionAmount,
+                                               double totalCharge, String cardIdentity, String priceCode, String estateCode, String status, String complexMsg,
+                                               String actualMsg, String customerName){
+        AutoPrivatePowerLogEntity autoPrivatePowerLogEntity = new AutoPrivatePowerLogEntity();
+        autoPrivatePowerLogEntity.setOperationId(operationId);
+        autoPrivatePowerLogEntity.setUserTypeId(userTypeId);
+        autoPrivatePowerLogEntity.setCustomerId(customerId);
+        autoPrivatePowerLogEntity.setAmount(amount);
+        autoPrivatePowerLogEntity.setCommisionCharge(commissionAmount);
+        autoPrivatePowerLogEntity.setAmountCharge(totalCharge);
+        autoPrivatePowerLogEntity.setCardIdentity(cardIdentity);
+        autoPrivatePowerLogEntity.setCustomerName(customerName);
+        autoPrivatePowerLogEntity.setStatus(status);
+        autoPrivatePowerLogEntity.setEstateCode(estateCode);
+        autoPrivatePowerLogEntity.setOrderNo(orderNo);
+        autoPrivatePowerLogEntity.setResponseActualMessage(actualMsg);
+        autoPrivatePowerLogEntity.setResponseComplexMessage(complexMsg);
+        autoPrivatePowerLogEntity = autoPrivatePowerLogRepo.save(autoPrivatePowerLogEntity);
+        return autoPrivatePowerLogEntity.getId();
+    }
+
 }

@@ -113,4 +113,8 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
     @Query(value = "SELECT estate_code FROM estate_meter_details WHERE meter_no =:cardIdentity", nativeQuery = true)
     List<Object[]> getCustomerEstateCode(@Param("cardIdentity") String cardIdentity);
 
+    @Query(value = "SELECT commision_type cmt , commision_percent cmp, commision_service_charge csc FROM service_commision_charges " +
+            "WHERE service_account_no =:serviceAccountNo AND user_type_id =:userTypeId", nativeQuery = true)
+    List<Object[]> getServiceCommissionDetails(@Param("serviceAccountNo") String serviceAccountNo, @Param("userTypeId") String userTypeId);
+
 }
