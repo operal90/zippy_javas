@@ -166,6 +166,18 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
+    @PostMapping("/upload_customer_cac")
+    public ResponseEntity<BaseResponse> uploadUserCac(@Valid @RequestBody @ModelAttribute UserCACData userCACData ){
+        BaseResponse baseResponse = appService.uploadCAC(userCACData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+    @GetMapping("/list_customer_cac")
+    public ResponseEntity<BaseResponse> listCustomerCac(@Param("customerId") String customerId){
+        BaseResponse baseResponse = appService.listCustomerCac(customerId);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)

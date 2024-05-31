@@ -1,12 +1,12 @@
 package com.macrotel.zippyworld_test.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.macrotel.zippyworld_test.config.GoogleDriveConfig;
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.IdentityTypeDTO;
-import com.macrotel.zippyworld_test.dto.KycDTO;
 import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.*;
 import com.macrotel.zippyworld_test.repo.*;
@@ -16,6 +16,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +24,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
 
 import static com.macrotel.zippyworld_test.config.AppConstants.*;
 @Service
@@ -59,13 +61,17 @@ public class AppService {
     CustomerIdentityRecordRepo customerIdentityRecordRepo;
     @Autowired
     VerificationRepo verificationRepo;
-
     @Autowired
     NetworkTxnLogRepo networkTxnLogRepo;
     @Autowired
     SqlQueries sqlQueries;
     @Autowired
     DTOService dtoService;
+    @Autowired
+    GoogleDriveConfig googleDriveConfig;
+    @Autowired
+    CACFileRepo cacFileRepo;
+
     public AppService(@Lazy UtilityService utilityService, LoggingService loggingService) {
         this.utilityService = utilityService;
         this.loggingService = loggingService;
@@ -1140,7 +1146,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse electricityVending(ElectricityData electricityData){
         try{
             //Get necessary data needed
@@ -1371,7 +1376,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse userLogin(LoginData loginData){
         try{
             //Check if phoneNumber is unique;
@@ -1589,7 +1593,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse getGardensCustomerDetails(String meterNumber){
         try{
             HashMap<String, String> encryptedArray = new HashMap<>();
@@ -1646,7 +1649,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse autoPrivatePowerVending(AutoPrivatePowerData autoPrivatePowerData){
         try{
             //Get necessary data needed
@@ -1746,5 +1748,64 @@ public class AppService {
         }
         return baseResponse;
     }
+    public BaseResponse uploadCAC(UserCACData userCACData){
+        try{
+            String customerId = userCACData.getPhonenumber();
+            //Check if user account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            MultipartFile cacFile = userCACData.getCacFile();
+            File tempFile = File.createTempFile("temp", null);
+            cacFile.transferTo(tempFile);
+            String cacUrl = googleDriveConfig.uploadFileToDrive(tempFile);
 
+            CACEntity cacEntity = new CACEntity();
+            cacEntity.setCustomerId(customerId);
+            cacEntity.setFile_url(cacUrl);
+            cacFileRepo.save(cacEntity);
+
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage("CAC File Uploaded Successfully");
+            baseResponse.setResult(EMPTY_RESULT);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+    public BaseResponse listCustomerCac(String phoneNumber){
+        try{
+            //Check if user account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(phoneNumber);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get customer cac files
+            List<CACEntity> customerCACRecord = cacFileRepo.findByCustomerId(phoneNumber);
+            List<Object> result = new ArrayList<>();
+            for(CACEntity cacEntity : customerCACRecord){
+                HashMap<String, String> cacMap = new HashMap<>();
+                cacMap.put("customerId", cacEntity.getCustomerId());
+                cacMap.put("fileUrl", cacEntity.getFile_url());
+                cacMap.put("createdAt", cacEntity.getCreatedAt());
+                result.add(cacMap);
+            }
+
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(result);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
 }
