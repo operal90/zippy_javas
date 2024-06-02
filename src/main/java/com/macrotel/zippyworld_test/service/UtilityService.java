@@ -5,6 +5,7 @@ import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.MessageServiceDTO;
 import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
+import com.macrotel.zippyworld_test.provider.HESProvider;
 import com.macrotel.zippyworld_test.provider.ShagoConnect;
 import com.macrotel.zippyworld_test.provider.TelecomConnect;
 import com.macrotel.zippyworld_test.repo.*;
@@ -28,6 +29,7 @@ public class UtilityService {
     }
     UtilityResponse utilityResponse = new UtilityResponse();
     UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
+    HESProvider hesProvider = new HESProvider();
     TelecomConnect telecomConnect = new TelecomConnect();
     ShagoConnect shagoConnect = new ShagoConnect();
     Notification notification = new Notification();
@@ -1302,8 +1304,35 @@ public class UtilityService {
                                                 "NN","",0,PRIVATE_ESTATE_COMMISSION_AMOUNT,PRIVATE_ESTATE_COMMISSION_COLLECTOR,commissionCollectorWalletBalance,"2",todayDate);
 
 
+                        //Consume third party API to buy token
+                        Object buyMeterToken = hesProvider.buyToken(cardIdentity,customerName,amount, Integer.valueOf(loadingType));
+                        Map<String, Object> meterTokenResponseMap = (Map<String, Object>) buyMeterToken;
+                        String meterTokenStatusCode = (String) meterTokenResponseMap.get("statusCode");
+                        String meterToken = (String) meterTokenResponseMap.get("token");
+                        String meterTokenMessage = (String) meterTokenResponseMap.get("message");
+                        String meterTokenResponse = (String) meterTokenResponseMap.get("response");
+                        Object meterTokenResult = meterTokenResponseMap.get("result");
 
-
+                        if(!meterTokenStatusCode.equals("1")){
+                            double transferAmount = amountCharge -100;
+                            //Fix the bank transfer status
+                            result.put("statusCode", meterTokenStatusCode);
+                            result.put("message",meterTokenMessage);
+                            result.put("statusMessage", "Successful");
+                            result.put("initialMessage", meterTokenResult);
+                            result.put("reference", operationId);
+                            result.put("token", meterToken);
+                            result.put("bankTransferStatus", "3");
+                        }
+                        else{
+                            result.put("statusCode", "1");
+                            result.put("message","Insufficient Wallet Balance");
+                            result.put("statusMessage", "Failed");
+                            result.put("initialMessage", meterTokenResult);
+                            result.put("reference", operationId);
+                            result.put("token", "");
+                            result.put("bankTransferStatus", "3");
+                        }
                     }
                     else{
                         result.put("statusCode", "1");

@@ -29,6 +29,8 @@ public class AutoPrivatePowerLogEntity implements Serializable {
     private String responseComplexMessage;
     private String responseActualMessage;
     private String timeIn;
+    private String token;
+    private String timeOut;
 
     public AutoPrivatePowerLogEntity() {
         this.paidStatus = "1";

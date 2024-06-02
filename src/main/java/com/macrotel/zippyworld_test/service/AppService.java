@@ -1720,6 +1720,20 @@ public class AppService {
                         Object getAutoPrivatePowerVending = utilityService.autoPrivatePowerVending(operationId,customerId,userTypeId,cardIdentity,serviceAccountNumber,amount,commissionAmount,totalCharge,channel,
                                 loadingType,orderNumber,estateCode);
 
+                        Map<String, String> getPowerPurchaseResult = (Map<String, String>) getAutoPrivatePowerVending;
+                        String powerPurchaseStatusCode = getPowerPurchaseResult.get("statusCode");
+                        String powerPurchaseStatusMessage = getPowerPurchaseResult.get("statusMessage");
+                        String powerPurchaseMessage = getPowerPurchaseResult.get("message");
+                        String powerToken = getPowerPurchaseResult.get("token");
+                        String responseMessage = new ObjectMapper().writeValueAsString(getPowerPurchaseResult);
+                        String bankTransferStatus = getPowerPurchaseResult.get("bankTransferStatus");
+                        sqlQueries.updateTransactionStatus(customerId,operationId,powerPurchaseStatusMessage);
+                        loggingService.autoPrivatePowerRequestUpdate(responseId,powerToken,responseMessage,powerPurchaseStatusCode,powerPurchaseStatusMessage,bankTransferStatus);
+
+                        baseResponse.setStatus_code(powerPurchaseStatusCode);
+                        baseResponse.setMessage(powerPurchaseMessage);
+                        baseResponse.setResult(getPowerPurchaseResult);
+
                     }
                     catch (Exception ex){
                         loggingService.responseTxnLogging("",String.valueOf(responseId),"Failed to connect","2","Unsuccessful");

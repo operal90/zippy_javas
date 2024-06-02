@@ -275,4 +275,15 @@ public class LoggingService {
         return autoPrivatePowerLogEntity.getId();
     }
 
+    public void autoPrivatePowerRequestUpdate(Long id, String token, String responseMessage, String status, String actualMessage, String bankTransferStatus){
+        Optional<AutoPrivatePowerLogEntity>  getAutoPrivatePowerLog = autoPrivatePowerLogRepo.findById(id);
+        AutoPrivatePowerLogEntity autoPrivatePowerLogEntity = getAutoPrivatePowerLog.get();
+        autoPrivatePowerLogEntity.setResponseComplexMessage(responseMessage);
+        autoPrivatePowerLogEntity.setResponseActualMessage(actualMessage);
+        autoPrivatePowerLogEntity.setStatus(status);
+        autoPrivatePowerLogEntity.setToken(token);
+        autoPrivatePowerLogEntity.setPaidStatus(bankTransferStatus);
+        autoPrivatePowerLogEntity.setTimeOut(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        autoPrivatePowerLogRepo.save(autoPrivatePowerLogEntity);
+    }
 }
