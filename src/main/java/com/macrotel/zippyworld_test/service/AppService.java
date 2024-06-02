@@ -3,6 +3,7 @@ package com.macrotel.zippyworld_test.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.macrotel.zippyworld_test.config.GoogleDriveConfig;
 import com.macrotel.zippyworld_test.config.Notification;
+import com.macrotel.zippyworld_test.provider.HESProvider;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
@@ -34,6 +35,7 @@ public class AppService {
     ThirdPartyAPI thirdPartyAPI = new ThirdPartyAPI();
     UtilityConfiguration utilities = new UtilityConfiguration();
     Notification notification = new Notification();
+    HESProvider hesProvider = new HESProvider();
     private static final Logger LOG = Logger.getLogger(AppService.class.getName());
 
    private final UtilityService utilityService;
@@ -1595,54 +1597,15 @@ public class AppService {
     }
     public BaseResponse getGardensCustomerDetails(String meterNumber){
         try{
-            HashMap<String, String> encryptedArray = new HashMap<>();
-            encryptedArray.put("meterNo", meterNumber);
-            String encryptedData = utilities.encryptData(encryptedArray);
-            String requestTimeStamp = utilities.currentTimeStamp();
-            String requestId = utilities.randomDigit(8);
+           Object getCustomerMeterDetails = hesProvider.getCustomerDetails(meterNumber);
+            Map<String, Object> customerMeterDetails = (Map<String, Object>) getCustomerMeterDetails;
+            String statusCode = (String) customerMeterDetails.get("statusCode");
+            String message = (String) customerMeterDetails.get("message");
+            Object result = customerMeterDetails.get("result");
 
-            HashMap<String, String> apiParameters = new HashMap<>();
-            apiParameters.put("reqId", requestId);
-            apiParameters.put("timestamp", requestTimeStamp);
-            apiParameters.put("data", encryptedData);
-
-            Map<String, String> headers = new HashMap<>();
-            headers.put("Content-Type", " application/json");
-            String baseUrl = HES_LIVE_BASE_URL+"GetCustomer";
-            Object getCustomerInformationAPI = thirdPartyAPI.callAPI(baseUrl, HttpMethod.POST,headers,apiParameters);
-            Map<Object, String> customerInformationResponse = (Map<Object, String>) getCustomerInformationAPI;
-
-            if(customerInformationResponse != null){
-                String requestIdResponse = customerInformationResponse.get("reqId");
-                long timeStampResponse = Long.parseLong(String.valueOf(customerInformationResponse.get("timestamp")))/1000;
-                String dataResponse = customerInformationResponse.get("data");
-                long currentResponseTimeStamp = Long.parseLong(utilities.currentTimeStamp());
-                long timeDifference =  currentResponseTimeStamp -  timeStampResponse;
-
-                if(timeDifference < 15){
-                    Object decryptData = utilities.decryptData(dataResponse);
-                    Map<String, String> decryptResponse = (Map<String, String>) decryptData;
-                    boolean result = Boolean.parseBoolean(String.valueOf(decryptResponse.get("Result")));
-                    if(!result){
-                        baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                        baseResponse.setMessage(decryptResponse.get("msg"));
-                        baseResponse.setResult(decryptResponse);
-                        return baseResponse;
-                    }
-                    else{
-                        decryptResponse.remove("msg");
-                        decryptResponse.remove("Result");
-                        baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
-                        baseResponse.setMessage(SUCCESS_MESSAGE);
-                        baseResponse.setResult(decryptResponse);
-                    }
-                }
-                else {
-                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                    baseResponse.setMessage("Network Error, Kindly retry");
-                    baseResponse.setResult(EMPTY_RESULT);
-                }
-            }
+            baseResponse.setStatus_code(statusCode);
+            baseResponse.setMessage(message);
+            baseResponse.setResult(result);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

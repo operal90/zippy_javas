@@ -167,6 +167,18 @@ public class UtilityConfiguration {
         return operationValue;
     }
 
+    public String getOperationIdTaGarden(String type){
+        String operationValue = "";
+        if(Objects.equals(type, "NU")){
+            operationValue = this.randomDigit(4);
+        } else if (Objects.equals(type, "AN")) {
+            operationValue = this.randomAlphanumeric(4);
+        } else if (Objects.equals(type,"AL")) {
+            operationValue = this.randomAlphabet(4);
+        }
+        return operationValue;
+    }
+
     public Double formattedAmount(String amount){
         double removeCommaAmount = Double.parseDouble(this.removeComma(amount));
         DecimalFormat decimalFormat = new DecimalFormat("#.#####");

@@ -1292,6 +1292,17 @@ public class UtilityService {
                         double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf((serviceWalletBalance + (amountCharge -PRIVATE_ESTATE_COMMISSION_AMOUNT))));
 
                         //Logging
+                        loggingService.ledgerAccountLogging(operationId,"CR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
+                        loggingService.ledgerAccountLogging(operationId,"DR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
+                        loggingService.serviceWalletLogging(operationId,"CR",userTypeId,"",serviceAccountNumber,customerId,operationSummary,amount,"",commissionAmount,amountCharge,
+                                                            receiverWalletBalance,todayDate);
+                        loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,"",serviceAccountNumber,operationSummary1,amount,"","",
+                                                            commissionAmount,amountCharge,customerId,buyerWalletBalance,"",todayDate);
+                        loggingService.customerWalletLogging(operationId+"_CMS", "MAIN","CR",userTypeId,"",serviceAccountNumber,operationSummary,PRIVATE_ESTATE_COMMISSION_AMOUNT,
+                                                "NN","",0,PRIVATE_ESTATE_COMMISSION_AMOUNT,PRIVATE_ESTATE_COMMISSION_COLLECTOR,commissionCollectorWalletBalance,"2",todayDate);
+
+
+
 
                     }
                     else{
