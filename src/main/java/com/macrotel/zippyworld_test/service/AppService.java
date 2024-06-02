@@ -1756,6 +1756,7 @@ public class AppService {
                     try{
                         Object getAutoPrivatePowerVending = utilityService.autoPrivatePowerVending(operationId,customerId,userTypeId,cardIdentity,serviceAccountNumber,amount,commissionAmount,totalCharge,channel,
                                 loadingType,orderNumber,estateCode);
+
                     }
                     catch (Exception ex){
                         loggingService.responseTxnLogging("",String.valueOf(responseId),"Failed to connect","2","Unsuccessful");

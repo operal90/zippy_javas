@@ -1247,7 +1247,92 @@ public class UtilityService {
 
         HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
+        List<Object[]> getUserDetails = sqlQueries.getUserDetail(customerId);
+        Object[] customerDetails = getUserDetails.get(0);
+        String customerName = customerDetails[2].toString();
+        String bankTransferStatus = "";
+        String operationSummary = "";
+        String operationSummary1 = "";
 
+        Object checkDailyTxnBalance = this.checkDailyTxnBalance(customerId,amountCharge,serviceAccountNumber);
+        Map<String, String> dailyTxnBalance = (Map<String, String>) checkDailyTxnBalance;
+        String dailyTxnBalanceStatusCode = dailyTxnBalance.get("statusCode");
+        String dailyTxnBalanceMessage = dailyTxnBalance.get("message");
+        if(dailyTxnBalanceStatusCode.equals("0")){
+            //Get customer wallet balance
+            Object getCustomerWalletBalance = this.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            String customerWalletBalanceStatusCode = customerWalletBalance.get("statusCode");
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+
+            if(Objects.equals(customerWalletBalanceStatusCode, "0")){
+                if(customerWalletBalanceAmount>=amountCharge){
+                    //Get Service Wallet Balance
+                    double serviceWalletBalance = this.queryServiceWalletBalance(serviceAccountNumber);
+
+                    //Query commission collector wallet balance
+                    Object getCommissionWalletBalance = this.queryCustomerWalletBalance(PRIVATE_ESTATE_COMMISSION_COLLECTOR);
+                    Map<String, String> commissionCollectorWalletBalanceMap = (Map<String, String>) getCommissionWalletBalance;
+                    double commissionCollectorWalletBalanceAmount = Double.parseDouble(commissionCollectorWalletBalanceMap.get("amount"));
+                    String serviceName = this.getServiceAccountDetails(serviceAccountNumber);
+
+                    if(!Objects.equals(serviceName, "")){
+                        if(estateCode.equals("ZWPPP1774")){
+                            operationSummary= "TA Garden Auto Power Recharhage Commission";
+                            operationSummary1 = customerName+", of TA Garden bought "+serviceName+" electricity of "+amountCharge;
+                        } else if (estateCode.equals("ZWPPP1777")) {
+                            operationSummary= "Goosepen Auto Power Recharhage Commission";
+                            operationSummary1 = customerName+", of Goosepen bought "+serviceName+" electricity of "+amountCharge;
+                        } else if (estateCode.equals("ZWPPP1778")) {
+                            operationSummary= "Glover Auto Power Recharhage Commission";
+                            operationSummary1 = customerName+", of Glover bought "+serviceName+" electricity of "+amountCharge;
+                        }
+                        double buyerWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(customerWalletBalanceAmount - amountCharge));
+                        double commissionCollectorWalletBalance = utilityConfiguration.formattedAmount(String.valueOf(commissionCollectorWalletBalanceAmount + PRIVATE_ESTATE_COMMISSION_AMOUNT));
+                        double receiverWalletBalance = utilityConfiguration.formattedAmount(String.valueOf((serviceWalletBalance + (amountCharge -PRIVATE_ESTATE_COMMISSION_AMOUNT))));
+
+                        //Logging
+
+                    }
+                    else{
+                        result.put("statusCode", "1");
+                        result.put("message","Invalid Service Code");
+                        result.put("statusMessage", "Failed");
+                        result.put("initialMessage", "");
+                        result.put("reference", operationId);
+                        result.put("token", "");
+                        result.put("bankTransferStatus", "3");
+                    }
+                }
+                else{
+                    result.put("statusCode", "1");
+                    result.put("message","Insufficient Wallet Balance");
+                    result.put("statusMessage", "Failed");
+                    result.put("initialMessage", "");
+                    result.put("reference", operationId);
+                    result.put("token", "");
+                    result.put("bankTransferStatus", "3");
+                }
+            }
+            else{
+                result.put("statusCode", "1");
+                result.put("message",customerWalletBalance.get("message"));
+                result.put("statusMessage", "Failed");
+                result.put("initialMessage", "");
+                result.put("reference", operationId);
+                result.put("token", "");
+                result.put("bankTransferStatus", "3");
+            }
+        }
+        else{
+            result.put("statusCode", "1");
+            result.put("message",dailyTxnBalanceMessage);
+            result.put("statusMessage", "Failed");
+            result.put("initialMessage", "");
+            result.put("reference", operationId);
+            result.put("token", "");
+            result.put("bankTransferStatus", "3");
+        }
         return result;
     }
 }

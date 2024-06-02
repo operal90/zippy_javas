@@ -30,5 +30,7 @@ public class AppConstants {
     public static final String SHAGO_LIVE_BASE_URL = "https://shagopayments.com/api/live/b2b";
     public static final String NOTIFICATION_BASE_URL = "http://194.163.149.51:3001/notifications/notif";
     public static final String HES_LIVE_BASE_URL = "http://185.252.232.72/api/";
+    public static final String PRIVATE_ESTATE_COMMISSION_COLLECTOR = "08034441414";
+    public static final Integer PRIVATE_ESTATE_COMMISSION_AMOUNT = 40;
 
 }
