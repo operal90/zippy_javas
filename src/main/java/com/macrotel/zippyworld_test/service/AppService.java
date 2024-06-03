@@ -1721,6 +1721,7 @@ public class AppService {
                                 loadingType,orderNumber,estateCode);
 
                         Map<String, String> getPowerPurchaseResult = (Map<String, String>) getAutoPrivatePowerVending;
+
                         String powerPurchaseStatusCode = getPowerPurchaseResult.get("statusCode");
                         String powerPurchaseStatusMessage = getPowerPurchaseResult.get("statusMessage");
                         String powerPurchaseMessage = getPowerPurchaseResult.get("message");
@@ -1730,6 +1731,8 @@ public class AppService {
                         sqlQueries.updateTransactionStatus(customerId,operationId,powerPurchaseStatusMessage);
                         loggingService.autoPrivatePowerRequestUpdate(responseId,powerToken,responseMessage,powerPurchaseStatusCode,powerPurchaseStatusMessage,bankTransferStatus);
 
+                        getPowerPurchaseResult.remove("initialMessage");
+                        getPowerPurchaseResult.remove("bankTransferStatus");
                         baseResponse.setStatus_code(powerPurchaseStatusCode);
                         baseResponse.setMessage(powerPurchaseMessage);
                         baseResponse.setResult(getPowerPurchaseResult);
@@ -1739,7 +1742,7 @@ public class AppService {
                         loggingService.responseTxnLogging("",String.valueOf(responseId),"Failed to connect","2","Unsuccessful");
                         sqlQueries.updateTransactionStatus(customerId,operationId,"Pending");
                         baseResponse.setStatus_code(ERROR_STATUS_CODE);
-                        baseResponse.setMessage("Service Unavailable a the moment");
+                        baseResponse.setMessage("Service Unavailable at the moment");
                         baseResponse.setResult(EMPTY_RESULT);
                         return baseResponse;
                     }

@@ -1,6 +1,5 @@
 package com.macrotel.zippyworld_test.provider;
 
-import com.macrotel.zippyworld_test.config.AppConstants;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.LinkedMultiValueMap;
@@ -10,7 +9,7 @@ import java.util.*;
 
 import static com.macrotel.zippyworld_test.config.AppConstants.*;
 
-public class TelecomConnect {
+public class MacrotelConnect {
     ThirdPartyAPI thirdPartyAPI = new ThirdPartyAPI();
     public Object airtimeVendingRequest(String network, String phoneNumber, double amount, String operationId){
         int airtimeAmount = (int) amount;
@@ -111,6 +110,23 @@ public class TelecomConnect {
                 result.put("details", apiResponse);
             }
         }
+        return result;
+    }
+
+    public Object bankTransferEp(String operationId, String accountNumber, String bankCode, double amount, String accountName, String senderPhoneNumber, String senderName, String narration){
+        HashMap<String, Object> result = new HashMap<>();
+        String airtimeUrl =  END_POINT_MS+"banktransfer";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("x-api-key", X_API_KEY_TLS);
+        headers.put("client-id", CLIENT_ID_TLS);
+        headers.put("Content-Type", " application/x-www-form-urlencoded");
+
+        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
+        formParams.add("phonenumber", phoneNumber);
+        formParams.add("amount", String.valueOf(amount));
+        formParams.add("transaction_id", transactionId);
+
+        Object airtimeVendingThirdParty = thirdPartyAPI.callAPI(airtimeUrl, HttpMethod.POST,headers,formParams);
         return result;
     }
 }

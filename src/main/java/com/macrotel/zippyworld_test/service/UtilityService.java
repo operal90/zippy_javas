@@ -7,7 +7,7 @@ import com.macrotel.zippyworld_test.entity.*;
 import com.macrotel.zippyworld_test.pojo.UtilityResponse;
 import com.macrotel.zippyworld_test.provider.HESProvider;
 import com.macrotel.zippyworld_test.provider.ShagoConnect;
-import com.macrotel.zippyworld_test.provider.TelecomConnect;
+import com.macrotel.zippyworld_test.provider.MacrotelConnect;
 import com.macrotel.zippyworld_test.repo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -30,7 +30,7 @@ public class UtilityService {
     UtilityResponse utilityResponse = new UtilityResponse();
     UtilityConfiguration utilityConfiguration = new UtilityConfiguration();
     HESProvider hesProvider = new HESProvider();
-    TelecomConnect telecomConnect = new TelecomConnect();
+    MacrotelConnect macrotelConnect = new MacrotelConnect();
     ShagoConnect shagoConnect = new ShagoConnect();
     Notification notification = new Notification();
     @Autowired
@@ -359,7 +359,7 @@ public class UtilityService {
                                                         amount,"PT",commissionMode,0,amount,customerId,buyerWalletBalance,"",todayDate);
 
                     //Consult third-party telecom
-                    List<Object> airtimeVendingAPI = (List<Object>) telecomConnect.airtimeVendingRequest(network, airtimeBeneficiary, formattedAmount, operationId);
+                    List<Object> airtimeVendingAPI = (List<Object>) macrotelConnect.airtimeVendingRequest(network, airtimeBeneficiary, formattedAmount, operationId);
                     Object airtimeResponse = airtimeVendingAPI.get(0);
                     Map<String, Object> airtimeResponseMap = (Map<String, Object>) airtimeResponse;
                     String statusCode = (String) airtimeResponseMap.get("statusCode");
@@ -1126,7 +1126,7 @@ public class UtilityService {
                     double userMessageAmount = utilityConfiguration.twoDecimalFormattedAmount(String.valueOf(amount));
 
                     //Consume third party API
-                    List<Object> dataVendingAPI = (List<Object>) telecomConnect.dataVendingRequest(network, dataBeneficiary, dataAmount, planCode, operationId);
+                    List<Object> dataVendingAPI = (List<Object>) macrotelConnect.dataVendingRequest(network, dataBeneficiary, dataAmount, planCode, operationId);
                     Object dataResponse = dataVendingAPI.get(0);
                     Map<String, Object> dataResponseMap = (Map<String, Object>) dataResponse;
                     String statusCode = (String) dataResponseMap.get("statusCode");
@@ -1244,6 +1244,22 @@ public class UtilityService {
         return commissionAmount;
     }
 
+    public Object getClientAccountUserDetails(String clientId){
+        HashMap<String, String> result = new HashMap<>();
+        List<Object[]> getClientAccountDetails = sqlQueries.getClientAccountUserDetail(clientId);
+        if(!getClientAccountDetails.isEmpty()) {
+            Object[] clientAccountDetails = getClientAccountDetails.get(0);
+            result.put("statusCode", "0");
+            result.put("accountNumber", clientAccountDetails[0].toString());
+            result.put("accountName", clientAccountDetails[1].toString());
+            result.put("bankCode", clientAccountDetails[2].toString());
+        }
+        else{
+            result.put("statusCode", "1");
+        }
+        return result;
+    }
+
     public Object autoPrivatePowerVending(String operationId, String customerId, String userTypeId, String cardIdentity, String serviceAccountNumber, double amount,
                                           double commissionAmount, double amountCharge, String channel, String loadingType, String orderNumber, String estateCode){
 
@@ -1316,6 +1332,12 @@ public class UtilityService {
                         if(!meterTokenStatusCode.equals("1")){
                             double transferAmount = amountCharge -100;
                             //Fix the bank transfer status
+                            Object getClientAccountDetails = this.getClientAccountUserDetails(estateCode);
+                            Map<String, String>clientAccountDetail  = (Map<String, String>)getClientAccountDetails;
+                            String clientAccountStatusCode = clientAccountDetail.get("statusCode");
+                            if(clientAccountStatusCode.equals("0")){
+
+                            }
                             result.put("statusCode", meterTokenStatusCode);
                             result.put("message",meterTokenMessage);
                             result.put("statusMessage", "Successful");

@@ -108,30 +108,30 @@ public class HESProvider {
                 if(!decryptResponse.isEmpty()){
                     boolean result = Boolean.parseBoolean(String.valueOf(decryptResponse.get("Result")));
                     if (result) {
-                        String sendRstCode = (String) decryptResponse.get("SendRstCode");
-                        String token = (String) decryptResponse.get("Token");
-                        String energy = (String) decryptResponse.get("Energy");
+                        String sendRstCode =  String.valueOf(decryptResponse.get("SendRstCode"));
+                        String token = String.valueOf(decryptResponse.get("Token"));
+                        String energy = String.valueOf(decryptResponse.get("Energy"));
 
-                        if(sendRstCode.equals("0")){
+                        if(sendRstCode.equals("0") || sendRstCode.equals("0.0")){
                             message = "Dear "+customerName +", your power token is "+token+" ,which has been successfully sent to your meter. Thanks for using Zippyworld";
                             response ="0";
-                        } else if (sendRstCode.equals("1")) {
+                        } else if (sendRstCode.equals("1") || sendRstCode.equals("1.0")) {
                             message = "Dear "+customerName +", your power token is "+token+" .Request Failed. Thanks for using Zippyworld";
                             response ="0";
                         }
-                        else if (sendRstCode.equals("2")) {
+                        else if (sendRstCode.equals("2") || sendRstCode.equals("2.0")) {
                             message = "Dear "+customerName +", your power token is "+token+" .Meter not registered, sending failed. Thanks for using Zippyworld";
                             response ="0";
                         }
-                        else if (sendRstCode.equals("3")) {
+                        else if (sendRstCode.equals("3")|| sendRstCode.equals("3.0")) {
                             message = "Dear "+customerName +", your power token is "+token+" .Meter not online, sending failed. Thanks for using Zippyworld";
                             response ="0";
                         }
-                        else if (sendRstCode.equals("4")) {
+                        else if (sendRstCode.equals("4") || sendRstCode.equals("4.0")) {
                             message = "Dear "+customerName +", your power token is "+token+" .Meter not responding, sending failed. Thanks for using Zippyworld";
                             response ="0";
                         }
-                        else if (sendRstCode.equals("5")) {
+                        else if (sendRstCode.equals("5") || sendRstCode.equals("5.0")) {
                             message = "Dear "+customerName +", your power token is "+token+" .Meter rejects the token. Thanks for using Zippyworld";
                             response ="0";
                         }
@@ -139,13 +139,11 @@ public class HESProvider {
                             message = "Dear "+customerName +", your power token is "+token+" .Thanks for using Zippyworld";
                             response ="1";
                         }
-
-                        tokenResponseResult.put("statusCode", "1");
+                        tokenResponseResult.put("statusCode", "0");
                         tokenResponseResult.put("message", message);
                         tokenResponseResult.put("token", token);
                         tokenResponseResult.put("response", response);
                         tokenResponseResult.put("result",  decryptResponse);
-
                     }
                 }
             }
