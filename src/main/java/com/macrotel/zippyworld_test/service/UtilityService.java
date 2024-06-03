@@ -1,5 +1,7 @@
 package com.macrotel.zippyworld_test.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.MessageServiceDTO;
@@ -1261,7 +1263,7 @@ public class UtilityService {
     }
 
     public Object autoPrivatePowerVending(String operationId, String customerId, String userTypeId, String cardIdentity, String serviceAccountNumber, double amount,
-                                          double commissionAmount, double amountCharge, String channel, String loadingType, String orderNumber, String estateCode){
+                                          double commissionAmount, double amountCharge, String channel, String loadingType, String orderNumber, String estateCode) throws JsonProcessingException {
 
         HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
@@ -1336,7 +1338,15 @@ public class UtilityService {
                             Map<String, String>clientAccountDetail  = (Map<String, String>)getClientAccountDetails;
                             String clientAccountStatusCode = clientAccountDetail.get("statusCode");
                             if(clientAccountStatusCode.equals("0")){
-
+                                String clientAccountNumber = clientAccountDetail.get("accountNumber");
+                                String clientAccountBankCode = clientAccountDetail.get("bankCode");
+                                String clientAccountName = clientAccountDetail.get("accountName");
+                                Object bankTransferEp = macrotelConnect.bankTransferEp(operationId,clientAccountNumber,clientAccountBankCode,transferAmount,clientAccountName,customerId,cardIdentity+" Macrotel Innovations Ltd", operationSummary1);
+                                Map<String, Object> bankTransferResponseMap = (Map<String, Object>) bankTransferEp;
+                                String transferStatusCode = (String) bankTransferResponseMap.get("statusCode");
+                                Object transferDetails = bankTransferResponseMap.get("details");
+                                loggingService.insertIntoTextTb(operationId, new ObjectMapper().writeValueAsString(transferDetails));
+                                bankTransferStatus = transferStatusCode;
                             }
                             result.put("statusCode", meterTokenStatusCode);
                             result.put("message",meterTokenMessage);
@@ -1344,7 +1354,7 @@ public class UtilityService {
                             result.put("initialMessage", meterTokenResult);
                             result.put("reference", operationId);
                             result.put("token", meterToken);
-                            result.put("bankTransferStatus", "3");
+                            result.put("bankTransferStatus", bankTransferStatus);
                         }
                         else{
                             result.put("statusCode", "1");
@@ -1353,7 +1363,7 @@ public class UtilityService {
                             result.put("initialMessage", meterTokenResult);
                             result.put("reference", operationId);
                             result.put("token", "");
-                            result.put("bankTransferStatus", "3");
+                            result.put("bankTransferStatus", bankTransferStatus);
                         }
                     }
                     else{

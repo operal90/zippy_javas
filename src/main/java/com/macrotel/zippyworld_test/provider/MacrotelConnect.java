@@ -117,16 +117,31 @@ public class MacrotelConnect {
         HashMap<String, Object> result = new HashMap<>();
         String airtimeUrl =  END_POINT_MS+"banktransfer";
         Map<String, String> headers = new HashMap<>();
-        headers.put("x-api-key", X_API_KEY_TLS);
-        headers.put("client-id", CLIENT_ID_TLS);
+        headers.put("x-api-key", X_API_KEY_MS);
+        headers.put("client-id", CLIENT_ID_MS);
         headers.put("Content-Type", " application/x-www-form-urlencoded");
 
         MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
-        formParams.add("phonenumber", phoneNumber);
+        formParams.add("transaction_id", operationId);
+        formParams.add("account_number", accountNumber);
+        formParams.add("account_name", accountName);
+        formParams.add("bank_code", bankCode);
         formParams.add("amount", String.valueOf(amount));
-        formParams.add("transaction_id", transactionId);
+        formParams.add("sender_phonenumber", senderPhoneNumber);
+        formParams.add("sender_names", senderName);
+        formParams.add("narration", narration);
 
-        Object airtimeVendingThirdParty = thirdPartyAPI.callAPI(airtimeUrl, HttpMethod.POST,headers,formParams);
+        Object bankTransferThirdParty = thirdPartyAPI.callAPI(airtimeUrl, HttpMethod.POST,headers,formParams);
+        if(bankTransferThirdParty == null){
+            result.put("statusCode", "4");
+            result.put("details", new ArrayList<>());
+        }
+        else{
+            Map<String, Object> apiResponse = (Map<String, Object>) bankTransferThirdParty;
+            String statusCode = String.valueOf(apiResponse.get("responsecode"));
+                result.put("statusCode", statusCode);
+                result.put("details", apiResponse);
+        }
         return result;
     }
 }

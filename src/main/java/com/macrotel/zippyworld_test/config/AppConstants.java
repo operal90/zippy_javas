@@ -20,9 +20,11 @@ public class AppConstants {
     public  static final String BVN_NIN_VALIDATION_REGEX="^\\d{11}$";
     public static final String NUMBER_VALIDATION_REGEX = "^\\d+$";
     public static final String  END_POINT_TLS = "https://zippyworld.com.ng:8443/telcom_live_services/main/api/";
-    public static final String  END_POINT_MS = "https://zippyworld.com.ng:8443/macrotel_service_live/api/"
+    public static final String  END_POINT_MS = "https://zippyworld.com.ng:8443/macrotel_service_live/api/";
     public static final String CLIENT_ID_TLS = "ZW5AWYOK-983-IOP";
+    public static final String CLIENT_ID_MS = "ZW5HYOK-530-IMA";
     public static final String X_API_KEY_TLS = "3216724";
+    public static final String X_API_KEY_MS = "3410024";
     public static final String ELECTRICITY_SERVICE_CODE = "ZWOC002";
     public static final String TELCOM_SERVICE_CODE = "ZWOC001";
     public static final String CABLE_TV_SERVICE_CODE = "ZWOC003";
