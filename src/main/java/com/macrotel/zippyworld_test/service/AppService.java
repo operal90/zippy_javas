@@ -1545,7 +1545,7 @@ public class AppService {
         }
         return baseResponse;
     }
-    public BaseResponse commissionEarned(CommissionEarnedData commissionEarnedData){
+    public BaseResponse commissionEarned(SingleCustomerData commissionEarnedData){
         try{
             Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(commissionEarnedData.getPhonenumber());
             if(isCustomerExist.isEmpty()){
@@ -1815,6 +1815,16 @@ public class AppService {
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
             baseResponse.setMessage(SUCCESS_MESSAGE);
             baseResponse.setResult(result);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse customerTransactionList(SingleCustomerData singleCustomerData){
+        try{
+
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

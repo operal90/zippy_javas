@@ -147,7 +147,7 @@ public class ApplicationController {
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/commission_earned")
-    public ResponseEntity<BaseResponse> commissionEarned(@Valid @RequestBody CommissionEarnedData commissionEarnedData){
+    public ResponseEntity<BaseResponse> commissionEarned(@Valid @RequestBody SingleCustomerData commissionEarnedData){
         BaseResponse baseResponse = appService.commissionEarned(commissionEarnedData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
