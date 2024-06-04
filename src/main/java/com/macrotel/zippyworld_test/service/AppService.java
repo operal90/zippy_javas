@@ -1824,7 +1824,32 @@ public class AppService {
 
     public BaseResponse customerTransactionList(SingleCustomerData singleCustomerData){
         try{
-
+            //Get Customer Transaction List
+            List<Object []> getCustomerTransactionList = sqlQueries.getCustomerTransactionList(singleCustomerData.getPhonenumber());
+            if(getCustomerTransactionList.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("No record found");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            List<Object> result = new ArrayList<>();
+            for(Object[] customerTransactionList : getCustomerTransactionList){
+                HashMap<String, String> transactionMap = new HashMap<>();
+                transactionMap.put("reference_id", String.valueOf(customerTransactionList[0]));
+                transactionMap.put("operation_type", String.valueOf(customerTransactionList[1]));
+                transactionMap.put("operation_summary",String.valueOf(customerTransactionList[2]));
+                transactionMap.put("amount", String.valueOf(customerTransactionList[3]));
+                transactionMap.put("commision_charge",String.valueOf(customerTransactionList[4]));
+                transactionMap.put("amount_charge",String.valueOf(customerTransactionList[5]));
+                transactionMap.put("wallet_balance", String.valueOf(customerTransactionList[6]));
+                transactionMap.put("status",String.valueOf(customerTransactionList[7]));
+                transactionMap.put("operation_at",String.valueOf(customerTransactionList[8]));
+                transactionMap.put("service_account_name", String.valueOf(customerTransactionList[9]));
+                result.add(transactionMap);
+            }
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(result);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
