@@ -1271,6 +1271,7 @@ public class UtilityService {
             result.put("accountName", clientAccountDetails[1].toString());
             result.put("bankCode", clientAccountDetails[2].toString());
         }
+
         else{
             result.put("statusCode", "1");
         }
