@@ -49,6 +49,8 @@ public class UtilityService {
     LoginTrackerRepo loginTrackerRepo;
     @Autowired
     DTOService dtoService;
+    @Autowired
+    AutoPrivatePowerLogRepo autoPrivatePowerLogRepo;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -1278,7 +1280,7 @@ public class UtilityService {
     }
 
     public Object autoPrivatePowerVending(String operationId, String customerId, String userTypeId, String cardIdentity, String serviceAccountNumber, double amount,
-                                          double commissionAmount, double amountCharge, String channel, String loadingType, String orderNumber, String estateCode) throws JsonProcessingException {
+                                          double commissionAmount, double amountCharge, String channel, String loadingType, String estateCode) throws JsonProcessingException {
 
         HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
@@ -1422,4 +1424,36 @@ public class UtilityService {
         }
         return result;
     }
+
+    public Object getCustomerTxnFullDetails(String referenceId){
+        HashMap<String,Object> result = new HashMap<>();
+        List<Object[]> getAllTransactionFullDetails = sqlQueries.getCustomerTransactionFullDetails(referenceId);
+        if(getAllTransactionFullDetails.isEmpty()){
+            result.put("statusCode", "1");
+            result.put("message", "No record Found");
+            return result;
+        }
+        Object[] transactionFullDetails = getAllTransactionFullDetails.get(0);
+        String tableName = String.valueOf(transactionFullDetails[13]);
+        String serviceAccountNumber = String.valueOf(transactionFullDetails[11]);
+        String customerId = String.valueOf(transactionFullDetails[2]);
+
+        Object resultOne = new Object();
+        if(serviceAccountNumber.equals("1000000026") || serviceAccountNumber.equals("1000000031")){
+            Optional<AutoPrivatePowerLogEntity> getEstatePowerTxnLog = sqlQueries.estatePowerTxnLogs(customerId,referenceId);
+            if(getEstatePowerTxnLog.isPresent()){
+                resultOne = getEstatePowerTxnLog.get();
+            }
+        } else if (serviceAccountNumber.equals("10000000311")) {
+            Optional<AutoPrivatePowerLogEntity> getEstatePowerTxnLog = autoPrivatePowerLogRepo.getEstatePowerTxnLog(customerId,referenceId);
+            if(getEstatePowerTxnLog.isPresent()){
+                resultOne = getEstatePowerTxnLog.get();
+            }
+        } else if (serviceAccountNumber.equals("1000000028")) {
+            
+        }
+        return result;
+    }
+
+
 }

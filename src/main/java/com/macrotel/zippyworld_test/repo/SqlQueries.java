@@ -1,5 +1,6 @@
 package com.macrotel.zippyworld_test.repo;
 
+import com.macrotel.zippyworld_test.entity.AutoPrivatePowerLogEntity;
 import com.macrotel.zippyworld_test.entity.OTPEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -134,4 +135,13 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
             "cs.operation_at, sa.service_account_name, sa.service_account_no FROM customer_wallets cs,service_accounts sa " +
             "WHERE cs.customer_id =:customerId AND sa.service_account_no = cs.service_account_no AND reference_id =:referenceId", nativeQuery = true)
     List<Object[]> getCustomerTransactionDetails(@Param("customerId") String customerId, @Param("referenceId") String referenceId);
+
+    @Query(value = "SELECT cs.reference_id, cs.operation_type, cs.customer_id,cs.operation_summary,cs.amount,cs.commision_charge,cs.amount_charge,cs.wallet_balance, " +
+            "cs.operation_at,cs.status status_message, sa.service_account_name, sa.service_account_no, sa.service_name, sa.table_name " +
+            "FROM customer_wallets cs,service_accounts sa WHERE  sa.service_account_no = cs.service_account_no AND reference_id =:referenceId", nativeQuery = true)
+    List<Object[]> getCustomerTransactionFullDetails(@Param("referenceId") String referenceId);
+
+    @Query(value = "SELECT *  FROM estate_power_txn_logs ept , estate_meter_details eml  WHERE eml.meter_no = ept.card_identity AND ept.customer_id =:customerId AND ept.operation_id =:referenceId'", nativeQuery = true)
+    Optional<AutoPrivatePowerLogEntity> estatePowerTxnLogs(@Param("customerId") String customerId, @Param("referenceId") String referenceId);
+
 }

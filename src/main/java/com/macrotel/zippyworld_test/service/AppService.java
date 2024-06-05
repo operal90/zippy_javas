@@ -1718,7 +1718,7 @@ public class AppService {
                 if(sessionToken == 0 || channel.equals("SMART-KEYPAD-POS") || channel.equals("GRAVITY-POS")){
                     try{
                         Object getAutoPrivatePowerVending = utilityService.autoPrivatePowerVending(operationId,customerId,userTypeId,cardIdentity,serviceAccountNumber,amount,commissionAmount,totalCharge,channel,
-                                loadingType,orderNumber,estateCode);
+                                loadingType, estateCode);
 
                         Map<String, String> getPowerPurchaseResult = (Map<String, String>) getAutoPrivatePowerVending;
 
@@ -1892,6 +1892,23 @@ public class AppService {
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
             baseResponse.setMessage(SUCCESS_MESSAGE);
             baseResponse.setResult(result);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+    public BaseResponse customerTransactionFullDetails(CustomerReferenceData customerReferenceData){
+        try{
+            String referenceId = customerReferenceData.getReference_id();
+            String customerId = customerReferenceData.getPhonenumber();
+            if(referenceId.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Provide a Reference ID");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            Object getCustomerTransactionFullDetails = utilityService.getCustomerTxnFullDetails(referenceId);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

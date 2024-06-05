@@ -190,6 +190,12 @@ public class ApplicationController {
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }
+    @PostMapping("/customer_txn_full_details")
+    public ResponseEntity<BaseResponse> customerTransactionFullDetails(@Valid @RequestBody CustomerReferenceData customerReferenceData){
+        BaseResponse baseResponse = appService.customerTransactionFullDetails(customerReferenceData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
