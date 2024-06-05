@@ -1545,7 +1545,7 @@ public class AppService {
         }
         return baseResponse;
     }
-    public BaseResponse commissionEarned(SingleCustomerData commissionEarnedData){
+    public BaseResponse commissionEarned(CustomerReferenceData commissionEarnedData){
         try{
             Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(commissionEarnedData.getPhonenumber());
             if(isCustomerExist.isEmpty()){
@@ -1821,11 +1821,10 @@ public class AppService {
         }
         return baseResponse;
     }
-
-    public BaseResponse customerTransactionList(SingleCustomerData singleCustomerData){
+    public BaseResponse customerTransactionList(CustomerReferenceData customerReferenceData){
         try{
             //Get Customer Transaction List
-            List<Object []> getCustomerTransactionList = sqlQueries.getCustomerTransactionList(singleCustomerData.getPhonenumber());
+            List<Object []> getCustomerTransactionList = sqlQueries.getCustomerTransactionList(customerReferenceData.getPhonenumber());
             if(getCustomerTransactionList.isEmpty()){
                 baseResponse.setStatus_code(ERROR_STATUS_CODE);
                 baseResponse.setMessage("No record found");
@@ -1845,6 +1844,49 @@ public class AppService {
                 transactionMap.put("status",String.valueOf(customerTransactionList[7]));
                 transactionMap.put("operation_at",String.valueOf(customerTransactionList[8]));
                 transactionMap.put("service_account_name", String.valueOf(customerTransactionList[9]));
+                result.add(transactionMap);
+            }
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(result);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+    public BaseResponse customerTransactionDetails (CustomerReferenceData customerReferenceData){
+        try{
+            String referenceId = customerReferenceData.getReference_id();
+            String customerId = customerReferenceData.getPhonenumber();
+            if(referenceId.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Provide a Reference ID");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get Customer Transaction Details
+            List<Object []> getCustomerTransactionDetails = sqlQueries.getCustomerTransactionDetails(customerId,referenceId);
+            if(getCustomerTransactionDetails.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("No record found");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            List<Object> result = new ArrayList<>();
+            for(Object[] customerTransactionList : getCustomerTransactionDetails){
+                HashMap<String, String> transactionMap = new HashMap<>();
+                transactionMap.put("reference_id", String.valueOf(customerTransactionList[0]));
+                transactionMap.put("operation_type", String.valueOf(customerTransactionList[1]));
+                transactionMap.put("customer_id",String.valueOf(customerTransactionList[2]));
+                transactionMap.put("operation_summary", String.valueOf(customerTransactionList[3]));
+                transactionMap.put("amount",String.valueOf(customerTransactionList[4]));
+                transactionMap.put("commision_charge",String.valueOf(customerTransactionList[5]));
+                transactionMap.put("amount_charge", String.valueOf(customerTransactionList[6]));
+                transactionMap.put("wallet_balance",String.valueOf(customerTransactionList[7]));
+                transactionMap.put("operation_at",String.valueOf(customerTransactionList[8]));
+                transactionMap.put("service_account_name", String.valueOf(customerTransactionList[9]));
+                transactionMap.put("service_account_no", String.valueOf(customerTransactionList[10]));
                 result.add(transactionMap);
             }
             baseResponse.setStatus_code(SUCCESS_STATUS_CODE);

@@ -129,4 +129,9 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
             "FROM customer_wallets cs, service_accounts sa WHERE customer_id =:customerId AND sa.service_account_no = cs.service_account_no " +
             "ORDER BY operation_at DESC LIMIT 0, 20", nativeQuery = true)
     List<Object[]> getCustomerTransactionList(@Param("customerId") String customerId);
+
+    @Query(value = "SELECT cs.reference_id, cs.operation_type, cs.customer_id,cs.operation_summary,cs.amount,cs.commision_charge,cs.amount_charge,cs.wallet_balance, " +
+            "cs.operation_at, sa.service_account_name, sa.service_account_no FROM customer_wallets cs,service_accounts sa " +
+            "WHERE cs.customer_id =:customerId AND sa.service_account_no = cs.service_account_no AND reference_id =:referenceId", nativeQuery = true)
+    List<Object[]> getCustomerTransactionDetails(@Param("customerId") String customerId, @Param("referenceId") String referenceId);
 }
