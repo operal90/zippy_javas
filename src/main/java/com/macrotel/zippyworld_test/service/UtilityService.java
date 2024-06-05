@@ -51,6 +51,10 @@ public class UtilityService {
     DTOService dtoService;
     @Autowired
     AutoPrivatePowerLogRepo autoPrivatePowerLogRepo;
+    @Autowired
+    PosPaymentNotificationRepo posPaymentNotificationRepo;
+    @Autowired
+    FundTransferTxnLogRepo fundTransferTxnLogRepo;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -1450,7 +1454,20 @@ public class UtilityService {
                 resultOne = getEstatePowerTxnLog.get();
             }
         } else if (serviceAccountNumber.equals("1000000028")) {
-            
+            Optional<PosPaymentNotificationEntity> getCustomerReference = posPaymentNotificationRepo.customerTransactionReference(customerId,referenceId);
+            if(getCustomerReference.isPresent()){
+                resultOne = getCustomerReference.get();
+            }
+        } else if (serviceAccountNumber.equals("1000000021")) {
+            String[] value = referenceId.split("_");
+            referenceId = value[0];
+            Optional<FundTransferTxnLogEntity> findByOperationId = fundTransferTxnLogRepo.findByOperationId(referenceId);
+            if(findByOperationId.isPresent()){
+                resultOne = findByOperationId.get();
+            }
+        }
+        else if (serviceAccountNumber.equals("1000000023")){
+
         }
         return result;
     }
