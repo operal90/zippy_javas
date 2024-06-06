@@ -1439,22 +1439,23 @@ public class UtilityService {
 
     public Object getCustomerTxnFullDetails(String referenceId){
         HashMap<String,Object> result = new HashMap<>();
-        List<Object[]> getAllTransactionFullDetails = sqlQueries.getCustomerTransactionFullDetails(referenceId);
+        List<Map<String, Object>> getAllTransactionFullDetails = sqlQueries.getCustomerTransactionFullDetails(referenceId);
         if(getAllTransactionFullDetails.isEmpty()){
             result.put("statusCode", "1");
             result.put("message", "No record Found");
             return result;
         }
-        Object[] transactionFullDetails = getAllTransactionFullDetails.get(0);
-        String tableName = String.valueOf(transactionFullDetails[13]);
-        String serviceAccountNumber = String.valueOf(transactionFullDetails[11]);
-        String customerId = String.valueOf(transactionFullDetails[2]);
+        Map<String, Object> transactionFullDetails = getAllTransactionFullDetails.get(0);
+        String tableName = String.valueOf(transactionFullDetails.get("table_name"));
+        String serviceAccountNumber = String.valueOf(transactionFullDetails.get("service_account_no"));
+        String customerId = String.valueOf(transactionFullDetails.get("customer_id"));
 
         Object resultOne = new Object();
+
         if(serviceAccountNumber.equals("1000000026") || serviceAccountNumber.equals("1000000031")){
-            Optional<AutoPrivatePowerLogEntity> getEstatePowerTxnLog = sqlQueries.estatePowerTxnLogs(customerId,referenceId);
-            if(getEstatePowerTxnLog.isPresent()){
-                resultOne = getEstatePowerTxnLog.get();
+            List<Map<String, Object>> getEstatePowerTxnLog = sqlQueries.estatePowerTxnLogs(customerId,referenceId);
+            if(!getEstatePowerTxnLog.isEmpty()){
+                resultOne = getEstatePowerTxnLog.get(0);
             }
         } else if (serviceAccountNumber.equals("10000000311")) {
             Optional<AutoPrivatePowerLogEntity> getEstatePowerTxnLog = autoPrivatePowerLogRepo.getEstatePowerTxnLog(customerId,referenceId);
@@ -1493,8 +1494,9 @@ public class UtilityService {
                     .setParameter("customerId", customerId)
                     .setParameter("referenceId", referenceId)
                     .getResultList();
+
             if (!resultList.isEmpty()) {
-                resultOne = resultList.get(0);
+                resultOne = utilityConfiguration.addColumnNamesToResultList((Object[]) resultList.get(0),tableName,entityManager);
             }
         }
 

@@ -5,17 +5,19 @@ import com.google.gson.reflect.TypeToken;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static ch.qos.logback.core.encoder.ByteArrayUtil.hexStringToByteArray;
@@ -23,6 +25,8 @@ import static ch.qos.logback.core.encoder.ByteArrayUtil.hexStringToByteArray;
 public class UtilityConfiguration {
     private static final String secretKey = "43877ABC5A56AE733918B7A3F850CD17";
     private static final Logger LOG = Logger.getLogger(UtilityConfiguration.class.getName());
+    @PersistenceContext
+    private EntityManager entityManager;
     public String capitalizeString(String text){
         if(text == null || text.isEmpty()){
             return text;
@@ -252,5 +256,17 @@ public class UtilityConfiguration {
         return decryptedObject;
     }
 
+    public Map<String, Object> addColumnNamesToResultList(Object[] resultArray, String tableName, EntityManager entityManager) {
+        String columnQuery = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = :tableName";
+        Query query = entityManager.createNativeQuery(columnQuery);
+        query.setParameter("tableName", tableName);
+        List<String> columnNames = query.getResultList();
+
+        Map<String, Object> resultWithColumnNames = new HashMap<>();
+        for (int i = 0; i < resultArray.length; i++) {
+            resultWithColumnNames.put(columnNames.get(i), resultArray[i]);
+        }
+        return resultWithColumnNames;
+    }
 
 }
