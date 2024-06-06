@@ -1498,7 +1498,10 @@ public class UtilityService {
             }
         }
 
-
+        result.put("statusCode", "0");
+        result.put("customer_wallet_result",transactionFullDetails);
+        result.put("service_result", resultOne);
+        result.put("message", "Successful");
         return result;
     }
 

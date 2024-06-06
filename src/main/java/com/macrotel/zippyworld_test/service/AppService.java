@@ -1909,6 +1909,15 @@ public class AppService {
                 return baseResponse;
             }
             Object getCustomerTransactionFullDetails = utilityService.getCustomerTxnFullDetails(referenceId);
+            Map<String, Object> getTransactionResult = (Map<String, Object>) getCustomerTransactionFullDetails;
+            String statusCode = String.valueOf(getTransactionResult.get("statusCode"));
+            String message = String.valueOf(getTransactionResult.get("message"));
+
+            getTransactionResult.remove("statusCode");
+            getTransactionResult.remove("message");
+            baseResponse.setStatus_code(statusCode);
+            baseResponse.setMessage(message);
+            baseResponse.setResult(getTransactionResult);
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
