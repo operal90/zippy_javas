@@ -141,7 +141,7 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
             "FROM customer_wallets cs,service_accounts sa WHERE  sa.service_account_no = cs.service_account_no AND reference_id =:referenceId", nativeQuery = true)
     List<Object[]> getCustomerTransactionFullDetails(@Param("referenceId") String referenceId);
 
-    @Query(value = "SELECT *  FROM estate_power_txn_logs ept , estate_meter_details eml  WHERE eml.meter_no = ept.card_identity AND ept.customer_id =:customerId AND ept.operation_id =:referenceId'", nativeQuery = true)
+    @Query(value = "SELECT *  FROM estate_power_txn_logs ept , estate_meter_details eml  WHERE eml.meter_no = ept.card_identity AND ept.customer_id =:customerId AND ept.operation_id =:referenceId", nativeQuery = true)
     Optional<AutoPrivatePowerLogEntity> estatePowerTxnLogs(@Param("customerId") String customerId, @Param("referenceId") String referenceId);
 
 }
