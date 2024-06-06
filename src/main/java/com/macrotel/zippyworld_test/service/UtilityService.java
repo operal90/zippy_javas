@@ -2,6 +2,8 @@ package com.macrotel.zippyworld_test.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
 import com.macrotel.zippyworld_test.dto.MessageServiceDTO;
@@ -15,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -55,6 +59,10 @@ public class UtilityService {
     PosPaymentNotificationRepo posPaymentNotificationRepo;
     @Autowired
     FundTransferTxnLogRepo fundTransferTxnLogRepo;
+    @Autowired
+    ProvidusSettlementNotificationRepo providusSettlementNotificationRepo;
+    @PersistenceContext
+    private EntityManager entityManager;
 
 
     public UtilityResponse agentCommissionStructure(double amount, String buzCharacter, String customerId, String userId, String packageId, String serviceAccountNo){
@@ -1467,8 +1475,30 @@ public class UtilityService {
             }
         }
         else if (serviceAccountNumber.equals("1000000023")){
-
+            Optional<ProvidusSettlementNotificationEntity> getTransactionDetails =providusSettlementNotificationRepo.getCustomerTransaction(customerId,referenceId);
+            if(getTransactionDetails.isPresent()){
+                String body = getTransactionDetails.get().getBody();
+                JsonObject jsonObject = new Gson().fromJson(body, JsonObject.class);
+                String sourceAccountName = jsonObject.get("sourceAccountName").getAsString();
+                String sourceBankName = jsonObject.get("sourceBankName").getAsString();
+                HashMap<String, String> providusPayment = new HashMap<>();
+                providusPayment.put("sourceAccountName", sourceAccountName);
+                providusPayment.put("sourceBankName", sourceBankName);
+                resultOne = providusPayment;
+            }
         }
+        else{
+            String query = "SELECT * FROM " + tableName + " WHERE customer_id = :customerId AND operation_id = :referenceId";
+            List resultList = entityManager.createNativeQuery(query)
+                    .setParameter("customerId", customerId)
+                    .setParameter("referenceId", referenceId)
+                    .getResultList();
+            if (!resultList.isEmpty()) {
+                resultOne = resultList.get(0);
+            }
+        }
+
+
         return result;
     }
 
