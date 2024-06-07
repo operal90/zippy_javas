@@ -1451,7 +1451,6 @@ public class UtilityService {
         String customerId = String.valueOf(transactionFullDetails.get("customer_id"));
 
         Object resultOne = new Object();
-
         if(serviceAccountNumber.equals("1000000026") || serviceAccountNumber.equals("1000000031")){
             List<Map<String, Object>> getEstatePowerTxnLog = sqlQueries.estatePowerTxnLogs(customerId,referenceId);
             if(!getEstatePowerTxnLog.isEmpty()){

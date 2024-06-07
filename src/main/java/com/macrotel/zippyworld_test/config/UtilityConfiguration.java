@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static ch.qos.logback.core.encoder.ByteArrayUtil.hexStringToByteArray;
 
@@ -257,11 +258,11 @@ public class UtilityConfiguration {
     }
 
     public Map<String, Object> addColumnNamesToResultList(Object[] resultArray, String tableName, EntityManager entityManager) {
-        String columnQuery = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = :tableName";
+        String columnQuery = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = :tableName ORDER BY ORDINAL_POSITION";
         Query query = entityManager.createNativeQuery(columnQuery);
         query.setParameter("tableName", tableName);
         List<String> columnNames = query.getResultList();
-
+        columnNames = columnNames.stream().map(String::toLowerCase).collect(Collectors.toList());
         Map<String, Object> resultWithColumnNames = new HashMap<>();
         for (int i = 0; i < resultArray.length; i++) {
             resultWithColumnNames.put(columnNames.get(i), resultArray[i]);
