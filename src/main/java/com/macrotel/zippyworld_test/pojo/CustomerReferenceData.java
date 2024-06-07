@@ -13,4 +13,8 @@ public class CustomerReferenceData {
     @NotEmpty(message = "PhoneNumber cannot be empty")
     private String phonenumber;
     private String reference_id;
+    private String start_date;
+    private String end_date;
+    private String operation_type;
+    private String service_account_no;
 }

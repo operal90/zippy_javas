@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -1889,6 +1890,45 @@ public class AppService {
             baseResponse.setStatus_code(statusCode);
             baseResponse.setMessage(message);
             baseResponse.setResult(getTransactionResult);
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse customerWalletHistory(CustomerReferenceData customerReferenceData){
+        try{
+            String phoneNumber = customerReferenceData.getPhonenumber();
+            String serviceAccountNumber = customerReferenceData.getService_account_no();
+            String startDate = customerReferenceData.getStart_date();
+            String endDate = customerReferenceData.getEnd_date();
+            String operationType = customerReferenceData.getOperation_type();
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                String currentDate = LocalDate.now().format(formatter);
+                if (startDate == null || startDate.trim().isEmpty()) {
+                    startDate = currentDate;
+                }
+                if (endDate == null || endDate.trim().isEmpty()) {
+                    endDate = currentDate;
+                }
+
+            LocalDate currentStartDate = LocalDate.parse(startDate, formatter);
+            LocalDate currentEndDate = LocalDate.parse(endDate, formatter);
+
+            if (ChronoUnit.DAYS.between(currentStartDate, currentEndDate) > 90) {
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Date Range to Large, History Failed to generate");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            Object getWalletHistory = utilityService.customerWalletHistory(phoneNumber,serviceAccountNumber,operationType,startDate,endDate);
+            baseResponse.setStatus_code(SUCCESS_STATUS_CODE);
+            baseResponse.setMessage(SUCCESS_MESSAGE);
+            baseResponse.setResult(getWalletHistory);
+
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());

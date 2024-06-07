@@ -19,10 +19,12 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.macrotel.zippyworld_test.config.AppConstants.*;
 @Service
@@ -1506,5 +1508,51 @@ public class UtilityService {
         return result;
     }
 
+    public Object customerWalletHistory(String phoneNumber, String serviceAccountNumber, String operationType, String startDate, String endDate){
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("SELECT cws.id, sat.service_name service_account_name, cws.reference_id, cws.operation_type, cws.operation_summary, ")
+                .append("cws.amount, cws.commision_charge, cws.amount_charge, cws.wallet_balance, cws.status, cws.operation_at ")
+                .append("FROM customer_wallets cws, service_accounts sat ")
+                .append("WHERE cws.customer_id = :phoneNumber ")
+                .append("AND cws.service_account_no = sat.service_account_no ")
+                .append("AND DATE(cws.operation_at) BETWEEN :startDate AND :endDate ");
+        if (serviceAccountNumber != null && !serviceAccountNumber.isEmpty()) {
+            queryBuilder.append("AND cws.service_account_no = :serviceAccountNumber ");
+        }
+        if (operationType != null && !operationType.isEmpty()) {
+            queryBuilder.append("AND cws.operation_type = :operationType ");
+        }
 
+        queryBuilder.append("ORDER BY cws.id DESC");
+        Query query = entityManager.createNativeQuery(queryBuilder.toString())
+                .setParameter("phoneNumber", phoneNumber)
+                .setParameter("startDate", startDate)
+                .setParameter("endDate", endDate);
+
+        if (serviceAccountNumber != null && !serviceAccountNumber.isEmpty()) {
+            query.setParameter("serviceAccountNumber", serviceAccountNumber);
+        }
+        if (operationType != null && !operationType.isEmpty()) {
+            query.setParameter("operationType", operationType);
+        }
+        List<Object[]> sqlQueryResult = query.getResultList();
+
+        List<Map<String, Object>> resultList = sqlQueryResult.stream().map(column -> {
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("id", column[0]);
+            resultMap.put("service_account_name", column[1]);
+            resultMap.put("reference_id", column[2]);
+            resultMap.put("operation_type", column[3]);
+            resultMap.put("operation_summary", column[4]);
+            resultMap.put("amount", column[5]);
+            resultMap.put("commision_charge", column[6]);
+            resultMap.put("amount_charge", column[7]);
+            resultMap.put("wallet_balance", column[8]);
+            resultMap.put("status", column[9]);
+            resultMap.put("operation_at", column[10]);
+            return resultMap;
+        }).collect(Collectors.toList());
+
+        return resultList;
+    }
 }
