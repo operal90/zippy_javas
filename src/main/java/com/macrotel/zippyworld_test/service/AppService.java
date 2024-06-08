@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.macrotel.zippyworld_test.config.GoogleDriveConfig;
 import com.macrotel.zippyworld_test.config.Notification;
 import com.macrotel.zippyworld_test.provider.HESProvider;
+import com.macrotel.zippyworld_test.provider.MacrotelConnect;
 import com.macrotel.zippyworld_test.repo.SqlQueries;
 import com.macrotel.zippyworld_test.config.ThirdPartyAPI;
 import com.macrotel.zippyworld_test.config.UtilityConfiguration;
@@ -37,6 +38,7 @@ public class AppService {
     UtilityConfiguration utilities = new UtilityConfiguration();
     Notification notification = new Notification();
     HESProvider hesProvider = new HESProvider();
+    MacrotelConnect macrotelConnect = new MacrotelConnect();
     private static final Logger LOG = Logger.getLogger(AppService.class.getName());
 
    private final UtilityService utilityService;
@@ -1719,7 +1721,7 @@ public class AppService {
                 if(sessionToken == 0 || channel.equals("SMART-KEYPAD-POS") || channel.equals("GRAVITY-POS")){
                     try{
                         Object getAutoPrivatePowerVending = utilityService.autoPrivatePowerVending(operationId,customerId,userTypeId,cardIdentity,serviceAccountNumber,amount,commissionAmount,totalCharge,channel,
-                                loadingType, estateCode);
+                                loadingType, estateCode,userPackageId);
 
                         Map<String, String> getPowerPurchaseResult = (Map<String, String>) getAutoPrivatePowerVending;
 
@@ -1896,7 +1898,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse customerWalletHistory(CustomerReferenceData customerReferenceData){
         try{
             String phoneNumber = customerReferenceData.getPhonenumber();
@@ -1932,6 +1933,22 @@ public class AppService {
         }
         catch (Exception ex){
             LOG.warning(ex.getMessage());
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse getBankList(){
+        try{
+            Object getBankList = macrotelConnect.getBankList();
+            Map<String, Object> apiResponse = (Map<String, Object>) getBankList;
+            baseResponse.setStatus_code(String.valueOf(apiResponse.get("status_code")));
+            baseResponse.setMessage(String.valueOf(apiResponse.get("message")));
+            baseResponse.setResult(apiResponse.get("result"));
+        }
+        catch (Exception ex){
+           baseResponse.setStatus_code(ERROR_STATUS_CODE);
+           baseResponse.setMessage("Banks List is unavailable now, Try again in few minutes. Thank you for using Zippyworld");
+           baseResponse.setResult(EMPTY_RESULT);
         }
         return baseResponse;
     }

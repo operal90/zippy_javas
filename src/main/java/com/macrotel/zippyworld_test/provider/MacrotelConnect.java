@@ -113,6 +113,15 @@ public class MacrotelConnect {
         return result;
     }
 
+    public Object getBankList(){
+        String bankListUrl = END_POINT_MS+"banks";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("x-api-key", X_API_KEY_MS);
+        headers.put("client-id", CLIENT_ID_MS);
+        headers.put("Content-Type", " application/x-www-form-urlencoded");
+
+        return thirdPartyAPI.callAPI(bankListUrl, HttpMethod.GET,headers,"");
+    }
     public Object bankTransferEp(String operationId, String accountNumber, String bankCode, double amount, String accountName, String senderPhoneNumber, String senderName, String narration){
         HashMap<String, Object> result = new HashMap<>();
         String airtimeUrl =  END_POINT_MS+"banktransfer";

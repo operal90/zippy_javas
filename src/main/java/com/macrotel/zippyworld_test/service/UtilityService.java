@@ -1294,7 +1294,7 @@ public class UtilityService {
     }
 
     public Object autoPrivatePowerVending(String operationId, String customerId, String userTypeId, String cardIdentity, String serviceAccountNumber, double amount,
-                                          double commissionAmount, double amountCharge, String channel, String loadingType, String estateCode) throws JsonProcessingException {
+                                          double commissionAmount, double amountCharge, String channel, String loadingType, String estateCode, String userPackageId) throws JsonProcessingException {
 
         HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
@@ -1345,11 +1345,11 @@ public class UtilityService {
                         //Logging
                         loggingService.ledgerAccountLogging(operationId,"CR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
                         loggingService.ledgerAccountLogging(operationId,"DR",serviceAccountNumber,operationSummary,amountCharge,customerId,channel,todayDate);
-                        loggingService.serviceWalletLogging(operationId,"CR",userTypeId,"",serviceAccountNumber,customerId,operationSummary,amount,"",commissionAmount,amountCharge,
+                        loggingService.serviceWalletLogging(operationId,"CR",userTypeId,userPackageId,serviceAccountNumber,customerId,operationSummary,amount,"",commissionAmount,amountCharge,
                                                             receiverWalletBalance,todayDate);
-                        loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,"",serviceAccountNumber,operationSummary1,amount,"","",
+                        loggingService.customerWalletLogging(operationId,"MAIN","DR",userTypeId,userPackageId,serviceAccountNumber,operationSummary1,amount,"","",
                                                             commissionAmount,amountCharge,customerId,buyerWalletBalance,"",todayDate);
-                        loggingService.customerWalletLogging(operationId+"_CMS", "MAIN","CR",userTypeId,"",serviceAccountNumber,operationSummary,PRIVATE_ESTATE_COMMISSION_AMOUNT,
+                        loggingService.customerWalletLogging(operationId+"_CMS", "MAIN","CR",userTypeId,userPackageId,serviceAccountNumber,operationSummary,PRIVATE_ESTATE_COMMISSION_AMOUNT,
                                                 "NN","",0,PRIVATE_ESTATE_COMMISSION_AMOUNT,PRIVATE_ESTATE_COMMISSION_COLLECTOR,commissionCollectorWalletBalance,"2",todayDate);
 
 
