@@ -1936,7 +1936,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse getBankList(){
         try{
             Object getBankList = macrotelConnect.getBankList();
@@ -1949,6 +1948,22 @@ public class AppService {
            baseResponse.setStatus_code(ERROR_STATUS_CODE);
            baseResponse.setMessage("Banks List is unavailable now, Try again in few minutes. Thank you for using Zippyworld");
            baseResponse.setResult(EMPTY_RESULT);
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse bankAccountDetails(BankAccountDetailsData bankAccountDetailsData){
+        try{
+            Object getBankDetails = macrotelConnect.getBankAccountDetails(bankAccountDetailsData.getBank_code(), bankAccountDetailsData.getAccount_number());
+            Map<String, Object> apiResponse = (Map<String, Object>) getBankDetails;
+            baseResponse.setStatus_code(String.valueOf(apiResponse.get("statusCode")));
+            baseResponse.setMessage(String.valueOf(apiResponse.get("message")));
+            baseResponse.setResult(EMPTY_RESULT);
+        }
+        catch (Exception ex){
+            baseResponse.setStatus_code(ERROR_STATUS_CODE);
+            baseResponse.setMessage("Bank Account Details unavailable now, Try again in few minutes. Thank you for using Zippyworld");
+            baseResponse.setResult(EMPTY_RESULT);
         }
         return baseResponse;
     }

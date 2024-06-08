@@ -122,6 +122,36 @@ public class MacrotelConnect {
 
         return thirdPartyAPI.callAPI(bankListUrl, HttpMethod.GET,headers,"");
     }
+
+    public Object getBankAccountDetails(String bankCode, String accountNumber){
+        HashMap<String, String> result = new HashMap<>();
+        result.put("statusCode", "1");
+        result.put("message", "No Record found");
+
+        String bankAccountUrl =  END_POINT_MS+"bank_account_details";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("x-api-key", X_API_KEY_MS);
+        headers.put("client-id", CLIENT_ID_MS);
+        headers.put("Content-Type", " application/x-www-form-urlencoded");
+
+        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
+        formParams.add("account_number", accountNumber);
+        formParams.add("bank_code", bankCode);
+
+        Object bankAccountDetailsThirdParty = thirdPartyAPI.callAPI(bankAccountUrl, HttpMethod.POST,headers,formParams);
+        if(bankAccountDetailsThirdParty != null){
+            Map<String, Object> apiResponse = (Map<String, Object>) bankAccountDetailsThirdParty;
+            String statusCode = String.valueOf(apiResponse.get("status_code"));
+            if(!statusCode.equals("1")){
+                Object accountResult = apiResponse.get("result");
+                Map<String, Object> accountResultMap = (Map<String, Object>) accountResult;
+                String accountName = String.valueOf(accountResultMap.get("accountName"));
+                result.put("statusCode", "0");
+                result.put("message", accountName);
+            }
+        }
+        return result;
+    }
     public Object bankTransferEp(String operationId, String accountNumber, String bankCode, double amount, String accountName, String senderPhoneNumber, String senderName, String narration){
         HashMap<String, Object> result = new HashMap<>();
         String airtimeUrl =  END_POINT_MS+"banktransfer";
