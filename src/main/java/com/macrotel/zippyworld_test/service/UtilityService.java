@@ -1298,9 +1298,9 @@ public class UtilityService {
 
         HashMap<String, Object> result = new HashMap<>();
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"));
-        List<Object[]> getUserDetails = sqlQueries.getUserDetail(customerId);
-        Object[] customerDetails = getUserDetails.get(0);
-        String customerName = customerDetails[2].toString();
+        List<Map<String, Object>> getUserDetails = sqlQueries.getUserDetail(customerId);
+        Map<String, Object> customerDetails = getUserDetails.get(0);
+        String customerName = String.valueOf(customerDetails.get("names"));
         String bankTransferStatus = "";
         String operationSummary = "";
         String operationSummary1 = "";

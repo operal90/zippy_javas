@@ -119,10 +119,10 @@ public interface SqlQueries extends JpaRepository<OTPEntity, Long> {
             "WHERE service_account_no =:serviceAccountNo AND user_type_id =:userTypeId", nativeQuery = true)
     List<Object[]> getServiceCommissionDetails(@Param("serviceAccountNo") String serviceAccountNo, @Param("userTypeId") String userTypeId);
 
-    @Query(value = "SELECT ua.id, ua.gender, CONCAT(ua.firstname,' ', ua.lastname) NAMES, ua.firstname, ua.lastname , ua.user_type, ua.user_package_id, ua.pnd_status ," +
+    @Query(value = "SELECT ua.id, ua.gender, CONCAT(ua.firstname,' ', ua.lastname) names, ua.firstname, ua.lastname , ua.kyc_level, ua.user_type, ua.user_package_id, ua.pnd_status ," +
                    " ua.email, ua.commission_mode , ua.address ,ua.promo_code, ua.parent_aggregator_code, IFNULL(LEFT(aggregator_code,2), '0') buz_aggregator_code, ua.notification_token, ua.bvn," +
                    " ua.account_no, ms.sms ms_sms,  ms.email ms_email,ms.whatsapp ms_whatsapp FROM user_accounts ua, message_services ms WHERE ua.phonenumber = ms.customer_id AND phonenumber =:customerId", nativeQuery = true)
-    List<Object[]> getUserDetail(@Param("customerId") String customerId);
+    List<Map<String, Object>> getUserDetail(@Param("customerId") String customerId);
 
     @Query(value = "SELECT account_number, account_name, bank_code FROM client_details WHERE  client_id =:clientId", nativeQuery = true)
     List<Object[]> getClientAccountUserDetail(@Param("clientId") String clientId);

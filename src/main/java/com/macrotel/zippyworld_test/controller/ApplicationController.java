@@ -19,6 +19,7 @@ import static com.macrotel.zippyworld_test.config.AppConstants.*;
 
 @RestController
 @RequestMapping("/zippyworld_test")
+@CrossOrigin(origins = {"*"})
 public class ApplicationController {
 
     private AppService appService;
@@ -209,8 +210,15 @@ public class ApplicationController {
         return new ResponseEntity<>(baseResponse,status);
     }
     @PostMapping("/bank_account_details")
-    public ResponseEntity<BaseResponse> bankAccountDetails(@Valid @RequestBody BankAccountDetailsData bankAccountDetailsData){
-        BaseResponse baseResponse = appService.bankAccountDetails(bankAccountDetailsData);
+    public ResponseEntity<BaseResponse> bankAccountDetails(@Valid @RequestBody BankDetailsData bankDetailsData){
+        BaseResponse baseResponse = appService.bankAccountDetails(bankDetailsData);
+        HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(baseResponse,status);
+    }
+
+    @PostMapping("/bank_transfer")
+    public ResponseEntity<BaseResponse> bankTransfer(@Valid @RequestBody BankTransferData bankTransferData){
+        BaseResponse baseResponse = appService.bankTransfer(bankTransferData);
         HttpStatus status = (Objects.equals(baseResponse.getStatus_code(), "0") || Objects.equals(baseResponse.getStatus_code(),"1"))?HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return new ResponseEntity<>(baseResponse,status);
     }

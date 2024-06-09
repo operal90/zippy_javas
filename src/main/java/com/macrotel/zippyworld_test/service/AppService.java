@@ -1951,9 +1951,9 @@ public class AppService {
         }
         return baseResponse;
     }
-    public BaseResponse bankAccountDetails(BankAccountDetailsData bankAccountDetailsData){
+    public BaseResponse bankAccountDetails(BankDetailsData bankDetailsData){
         try{
-            Object getBankDetails = macrotelConnect.getBankAccountDetails(bankAccountDetailsData.getBank_code(), bankAccountDetailsData.getAccount_number());
+            Object getBankDetails = macrotelConnect.getBankAccountDetails(bankDetailsData.getBank_code(), bankDetailsData.getAccount_number());
             Map<String, Object> apiResponse = (Map<String, Object>) getBankDetails;
             baseResponse.setStatus_code(String.valueOf(apiResponse.get("statusCode")));
             baseResponse.setMessage(String.valueOf(apiResponse.get("message")));
@@ -2011,17 +2011,12 @@ public class AppService {
                 return baseResponse;
             }
             //Get User Details and check user kyc level
-            UserAccountEntity userAccountEntity =  isCustomerExist.get();
+            List<Map<String, Object>> getUserDetails = sqlQueries.getUserDetail(customerId);
+            Map<String, Object> customerDetails = getUserDetails.get(0);
+            String customerName = String.valueOf(customerDetails.get("names"));
             String serviceAccountNumber  = "1000000017";
-            String userKycLevel = userAccountEntity.getKycLevel();
-            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
-            String customerEmail = userAccountEntity.getEmail();
-            String userTypeId = userAccountEntity.getUserType();
-            String userPackageId = userAccountEntity.getUserPackageId();
-            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
-            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
-            String commissionMode = userAccountEntity.getCommissionMode();
-            String pndStatus = userAccountEntity.getPndStatus();
+            String userKycLevel = String.valueOf(customerDetails.get("kyc_level"));
+            String pndStatus = String.valueOf(customerDetails.get("pnd_status"));
 
 
             //Check if User is on Post No Debit

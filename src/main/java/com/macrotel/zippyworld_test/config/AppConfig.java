@@ -22,6 +22,13 @@ public class AppConfig extends OncePerRequestFilter {
         String requestApiKey = request.getHeader("x-api-key");
         String requestUrl = request.getRequestURI();
 
+        if (requestApiKey == null && requestUrl.startsWith("/zippyworld_test/files/")) {
+            filterChain.doFilter(request, response);
+        }
+        else if(requestApiKey == null && requestUrl.startsWith("/zippyworld_test/payment_callback")){
+            filterChain.doFilter(request, response);
+        }
+        else{
             if (requestApiKey == null || !requestApiKey.equals(apiKey)) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 response.setContentType("application/json");
@@ -30,5 +37,6 @@ public class AppConfig extends OncePerRequestFilter {
 
             }
             filterChain.doFilter(request, response);
+        }
     }
 }
