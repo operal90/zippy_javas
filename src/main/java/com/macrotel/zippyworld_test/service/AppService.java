@@ -1951,7 +1951,6 @@ public class AppService {
         }
         return baseResponse;
     }
-
     public BaseResponse bankAccountDetails(BankAccountDetailsData bankAccountDetailsData){
         try{
             Object getBankDetails = macrotelConnect.getBankAccountDetails(bankAccountDetailsData.getBank_code(), bankAccountDetailsData.getAccount_number());
@@ -1964,6 +1963,100 @@ public class AppService {
             baseResponse.setStatus_code(ERROR_STATUS_CODE);
             baseResponse.setMessage("Bank Account Details unavailable now, Try again in few minutes. Thank you for using Zippyworld");
             baseResponse.setResult(EMPTY_RESULT);
+        }
+        return baseResponse;
+    }
+
+    public BaseResponse bankTransfer(BankTransferData bankTransferData){
+        try{
+            String securityAnswer = utilities.shaEncryption(bankTransferData.getSecurity_answer());
+            String customerId = bankTransferData.getPhonenumber();
+            double amount = utilities.formattedAmount(bankTransferData.getAmount());
+            String channel = bankTransferData.getChannel();
+            String accountNumber  = bankTransferData.getAccount_number();
+            //Check if user account exist
+            Optional<UserAccountEntity> isCustomerExist = userAccountRepo.findByPhonenumber(customerId);
+            if(isCustomerExist.isEmpty()){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Customer Account does not exit");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Confirm Security answer
+            boolean confirmSecurityAnswer = utilityService.confirmSecurityAnswer(customerId,securityAnswer);
+            if(!confirmSecurityAnswer){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Incorrect Security Answer");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check if user session token
+            int sessionToken = utilityService.checkSessionToken(customerId,bankTransferData.getToken());
+            if(sessionToken != 0){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Session Expired, Kindly Relogin");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+
+            //Check User have sufficient balance
+            Object getCustomerWalletBalance = utilityService.queryCustomerWalletBalance(customerId);
+            Map<String, String> customerWalletBalance = (Map<String, String>) getCustomerWalletBalance;
+            double customerWalletBalanceAmount = Double.parseDouble(customerWalletBalance.get("amount"));
+            if(amount > customerWalletBalanceAmount){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Insufficient Wallet Balance");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Get User Details and check user kyc level
+            UserAccountEntity userAccountEntity =  isCustomerExist.get();
+            String serviceAccountNumber  = "1000000017";
+            String userKycLevel = userAccountEntity.getKycLevel();
+            String customerName= userAccountEntity.getFirstname() +" "+userAccountEntity.getLastname();
+            String customerEmail = userAccountEntity.getEmail();
+            String userTypeId = userAccountEntity.getUserType();
+            String userPackageId = userAccountEntity.getUserPackageId();
+            String parentAggregatorCode = userAccountEntity.getParentAggregatorCode();
+            String buzAggregatorCode = userAccountEntity.getParentAggregatorCode().toUpperCase().substring(0,2);
+            String commissionMode = userAccountEntity.getCommissionMode();
+            String pndStatus = userAccountEntity.getPndStatus();
+
+
+            //Check if User is on Post No Debit
+            if(!Objects.equals("1", pndStatus)){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("The account is on Post No Debit, kindly contact the  customer service.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check User KYC Level
+            if(Objects.equals(userKycLevel,"0")){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("You can not perform this transaction due to your KYC. Kindly upgrade your KYC or contact the customer support.");
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+            //Check if user is on KYC Level 9
+            if(Objects.equals(userKycLevel,"9")){
+                if(amount > 5000){
+                    baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                    baseResponse.setMessage("You can not perform this transaction due to your KYC limit. Kindly upgrade your KYC to perform transaction above N5,000 or contact the customer support");
+                    baseResponse.setResult(EMPTY_RESULT);
+                    return baseResponse;
+                }
+            }
+            int checkPrevTransactionStatus = utilityService.checkPreviousTxnStatus(customerId,accountNumber,BANK_TRANSFER_SERVICE_CODE);
+            if(checkPrevTransactionStatus != 1){
+                baseResponse.setStatus_code(ERROR_STATUS_CODE);
+                baseResponse.setMessage("Please wait for 3 minutes before you can transfer to this account "+accountNumber);
+                baseResponse.setResult(EMPTY_RESULT);
+                return baseResponse;
+            }
+        }
+        catch (Exception ex){
+            LOG.warning(ex.getMessage());
         }
         return baseResponse;
     }
