@@ -1,6 +1,6 @@
 node {
     stage('Scm Checkout') {
-        git url: 'https://github.com/operal90/zippy_javas', branch: 'master'
+        git url: 'https://github.com/operal90/zippy_javas', branch: 'main'
     }
 
     stage('Compile Package') {
