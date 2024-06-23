@@ -11,7 +11,7 @@ node {
     }
     stage('ssh agent server'){
         sshagent(['demo-java']) {
-        sh 'scp zippy_javas ope@213.199.60.26:/var/www/'
+            sh 'scp zippy_javas ope@213.199.60.26:/var/www/'
 }
     }
 }
