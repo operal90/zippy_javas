@@ -4,7 +4,7 @@ node {
     }
 
     stage('Compile Package') {
-        def mvnHome = tool name: 'maven', type: 'maven'
+        def mvnHome = tool name: 'maven-3', type: 'maven'
         sh "echo Using Maven Home: ${mvnHome}"
         sh "echo Running Maven Package"
         sh "${mvnHome}/bin/mvn -X package" // '-X' enables debug output
